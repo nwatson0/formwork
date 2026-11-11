@@ -180,7 +180,7 @@ details.fine[open] summary svg { transform: rotate(180deg); }
 /* tab bar */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: rgba(12,13,15,.78); backdrop-filter: saturate(160%) blur(22px); -webkit-backdrop-filter: saturate(160%) blur(22px); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.tabs-in { max-width: 560px; margin: 0 auto; height: var(--tab-h); display: grid; grid-template-columns: repeat(3, 1fr); }
+.tabs-in { max-width: 560px; margin: 0 auto; height: var(--tab-h); display: grid; grid-template-columns: repeat(4, 1fr); }
 .tab { display: grid; justify-items: center; align-content: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--ink-3); }
 .tab svg { width: 25px; height: 25px; }
 .tab[aria-selected="true"] { color: var(--ink); }
@@ -262,6 +262,95 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
 .toast { position: fixed; left: 50%; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); transform: translate(-50%, 16px); opacity: 0; z-index: 40; padding: 11px 16px; border-radius: 14px; background: rgba(40,41,46,.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--line-2); font-size: 14px; font-weight: 600; transition: opacity .2s, transform .2s; pointer-events: none; max-width: calc(100% - 32px); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-3); font-size: 13px; pointer-events: none; }
+
+/* map mode + routines */
+.seg.sm button { height: 32px; font-size: 13px; }
+.chip.sug { background: linear-gradient(180deg, rgba(255,90,54,.22), rgba(255,74,42,.12)); border-color: rgba(255,74,42,.45); color: #ffd2c8; font-weight: 600; }
+.chip.sug svg { width: 14px; height: 14px; }
+/* live session bar */
+.sess { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-radius: 18px; background: var(--card); border: 1px solid rgba(48,209,88,.35); }
+.sess .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(48,209,88,.18); flex: none; }
+.sess .txt { flex: 1; min-width: 0; font-size: 13.5px; color: var(--ink-2); }
+.sess .txt b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 700; }
+.btn-s { height: 34px; padding: 0 13px; border-radius: 11px; font-size: 13px; font-weight: 700; background: var(--white); color: #000; flex: none; }
+.btn-s.ghost { background: var(--card-2); color: var(--ink); border: 1px solid var(--line); }
+.btn-s.warn { background: rgba(255,69,58,.16); color: #ffb3ac; border: 1px solid rgba(255,69,58,.4); }
+.row-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.save-r { display: flex; gap: 8px; }
+.save-r input { flex: 1; min-width: 0; height: 40px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--card-2); color: var(--ink); padding: 0 12px; font: inherit; font-size: 16px; }
+.save-r .btn-s { height: 40px; }
+/* set logging table */
+.sug { font-size: 13px; color: #d9d9df; background: var(--card-2); border: 1px solid var(--line); border-radius: 13px; padding: 9px 11px; line-height: 1.4; }
+.sug b { color: var(--green); font-weight: 700; }
+.set-tbl { display: grid; gap: 6px; }
+.set-h, .set-r { display: grid; grid-template-columns: 30px minmax(0, 1fr) 72px 60px 44px; gap: 8px; align-items: center; }
+.set-tbl.now .set-h, .set-tbl.now .set-r { grid-template-columns: 30px minmax(0, 1fr) 72px 44px; }
+.set-h span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); text-align: center; }
+.set-h span:nth-child(2) { text-align: left; }
+.set-r { min-height: 46px; padding: 0 0 0 4px; border-radius: 13px; transition: background .15s; }
+.set-r > b { font-size: 15px; font-weight: 700; text-align: center; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.set-r .prev { font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.set-r .num { width: 100%; height: 40px; border-radius: 11px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--ink); text-align: center; font: inherit; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 0 4px; -moz-appearance: textfield; }
+.set-r .num::placeholder { color: var(--ink-3); font-weight: 500; font-size: 13px; }
+.set-r .num:focus { outline: none; border-color: var(--white); }
+.set-r .ck { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--card-3); color: var(--ink-3); }
+.set-r .ck svg { width: 20px; height: 20px; }
+.set-r.done { background: rgba(48,209,88,.12); }
+.set-r.done .ck { background: var(--green); color: #00250c; }
+.set-r.done .num { background: transparent; border-color: transparent; }
+.set-r.pr > b { color: var(--amber); }
+.add-set { height: 38px; border-radius: 12px; border: 1px dashed var(--line-2); color: var(--ink-2); font-size: 13.5px; font-weight: 600; }
+.set-extra { display: grid; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.set-extra:empty { display: none; }
+.set-extra div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.set-extra b { color: var(--ink); font-weight: 600; }
+.set-extra i { font-style: normal; padding: 2px 8px; border-radius: 8px; background: var(--card-2); border: 1px solid var(--line); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.set-row:empty { display: none; }
+/* progress tab */
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border: 1px solid var(--line); border-radius: var(--r); }
+.kpis div { padding: 14px; display: grid; gap: 2px; }
+.kpis div + div { border-left: 1px solid var(--line); }
+.kpis b { font-size: 26px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.kpis span { font-size: 12px; color: var(--ink-2); }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal span { font-size: 10.5px; color: var(--ink-3); text-align: center; font-weight: 600; }
+.cal i { aspect-ratio: 1; border-radius: 9px; background: var(--card-2); display: block; }
+.cal i.on { background: var(--red); box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset; }
+.cal i.today { outline: 2px solid var(--ink-2); outline-offset: 1px; }
+.cal i.fut { background: transparent; border: 1px dashed var(--line); }
+.rec-list { display: grid; gap: 10px; }
+.rec { display: grid; grid-template-columns: 92px 1fr 44px; gap: 10px; align-items: center; font-size: 13.5px; }
+.rec span:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12.5px; }
+.bar { height: 8px; border-radius: 99px; background: var(--card-3); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; }
+.lst { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 2px 14px; }
+.lst > div, .lst > details > summary { display: flex; align-items: center; gap: 10px; padding: 12px 0; min-height: 52px; }
+.lst > * + * { border-top: 1px solid var(--line); }
+.lst .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.lst .grow b { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lst .grow span { font-size: 12.5px; color: var(--ink-2); }
+.lst .val { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; text-align: right; }
+.lst .val small { display: block; font-weight: 500; color: var(--ink-2); font-size: 11.5px; }
+.lst details summary { list-style: none; cursor: pointer; }
+.lst details summary::-webkit-details-marker { display: none; }
+.lst details ul { list-style: none; margin: 0 0 12px; padding: 10px 12px; background: var(--bg-2); border-radius: 12px; display: grid; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.lst details ul b { color: var(--ink); font-weight: 600; }
+.lst .empty-row { color: var(--ink-2); font-size: 13.5px; justify-content: center; }
+.chart { width: 100%; height: 120px; display: block; }
+.ttl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ttl-row h3 { font-size: 19px; }
+.ttl-row span { font-size: 12.5px; color: var(--ink-2); }
+/* summary modal */
+.modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.modal[hidden] { display: none; }
+.modal-card { width: 100%; max-width: 420px; max-height: calc(100vh - 40px); overflow-y: auto; background: var(--card); border: 1px solid var(--line-2); border-radius: 28px; padding: 22px 18px 18px; display: grid; gap: 16px; }
+.modal-card .big { text-align: center; display: grid; gap: 4px; }
+.modal-card .big .eyebrow { font-size: 12.5px; color: var(--green); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.modal-card h2 { font-size: 26px; font-weight: 800; }
+.modal-card .big span { color: var(--ink-2); font-size: 13.5px; }
+.pr-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,214,10,.1); border: 1px solid rgba(255,214,10,.3); font-size: 13.5px; }
+.pr-item b { flex: 1; font-weight: 600; }
+.pr-item span { font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .sheet, .sheet.open, .toast, .switch::after { transition: none; } }
 </style>
 </head>
@@ -272,12 +361,14 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
   <!-- TRAIN -->
   <main class="view" id="v-train">
     <div class="lt-row"><div class="grow"><h1>Train</h1><p>Tap the muscles you want to hit.</p></div><button class="pill-btn" id="gearPill" aria-label="Edit equipment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><b id="gearCount">0</b> gear</button></div>
+    <div class="seg sm" id="mapMode" role="group" aria-label="Body map mode"><button data-mm="sel" aria-pressed="true">Pick muscles</button><button data-mm="rec" aria-pressed="false">Recovery</button></div>
     <div class="map-card">
       <div class="map-stage" id="mapStage"><canvas id="mapCv" aria-label="Body muscle map — tap a muscle to select it"></canvas><div class="loading" id="mapLoading">Loading body…</div>
         <div class="map-lbl"><span>Front</span><span>Back</span></div>
         <div class="map-sel"><span class="n" id="selCount">0</span><span class="t" id="selText">muscles selected</span><button id="clearSel">Clear</button></div>
       </div>
     </div>
+    <div id="routineRow" hidden style="display:grid;gap:18px"><div class="lbl-row"><span>My routines</span></div><div class="chips scroll" id="routineChips" aria-label="My routines"></div></div>
     <div class="lbl-row"><span>Quick picks</span></div>
     <div class="chips scroll" id="presetChips" aria-label="Quick picks"></div>
     <details class="fine" id="fine"><summary>All muscles <span class="muted" id="fineSum"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></summary><div id="groups"></div></details>
@@ -293,7 +384,10 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
       <div class="wk-head"><div><div class="eyebrow" id="wkEyebrow">Example session</div><h2 id="wkTitle">Your workout</h2></div>
         <div class="stats"><div class="stat"><b id="wkCount">0</b><span>exercises</span></div><div class="stat"><b id="wkMin">0</b><span>minutes</span></div></div></div>
       <div class="note" id="wkNote"></div>
+      <div class="sess" id="sessBar" hidden><span class="dot"></span><span class="txt">Workout in progress · <b id="sessT">0:00</b></span><button class="btn-s warn" id="discardBtn">Discard</button><button class="btn-s" id="finishBtn">Finish</button></div>
       <button class="cta red" id="startBtn">Start workout</button>
+      <div class="row-acts" id="wkActs"><button class="btn-s ghost" id="saveRoutineBtn">Save as routine</button></div>
+      <div class="save-r" id="saveRoutineRow" hidden><input id="routineName" maxlength="40" aria-label="Routine name" placeholder="Routine name"><button class="btn-s" id="saveRoutineOk">Save</button></div>
       <div class="list" id="wkList"></div>
     </section>
   </main>
@@ -305,6 +399,12 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
     <div class="chips scroll" id="libGroups"></div>
     <div class="lib-tools"><button class="switch" id="libMine" role="switch" aria-checked="true" aria-label="Only show exercises for my gear"></button><span>My gear only</span><span class="count" id="libCount"></span></div>
     <div id="libList" style="display:grid;gap:12px"></div>
+  </main>
+
+  <!-- PROGRESS -->
+  <main class="view" id="v-prog" hidden>
+    <div class="lt-row"><div class="grow"><h1>Progress</h1><p>Your history, records and recovery — all saved on this phone.</p></div></div>
+    <div id="progBody" style="display:grid;gap:22px"></div>
   </main>
 
   <!-- GEAR -->
@@ -319,6 +419,7 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
 <nav class="tabs" aria-label="Sections"><div class="tabs-in" role="tablist">
   <button class="tab" role="tab" data-tab="train" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Train</button>
   <button class="tab" role="tab" data-tab="lib" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Library</button>
+  <button class="tab" role="tab" data-tab="prog" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16"/><path d="M7 16V11M12 16V6M17 16v-7"/></svg>Progress</button>
   <button class="tab" role="tab" data-tab="gear" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3"/></svg>Gear</button>
 </div></nav>
 
@@ -344,6 +445,9 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
       <div class="ex-title"><h2 id="exTitle">Exercise</h2><div class="chips" id="exTags"></div></div>
       <div class="sets" id="setsCard">
         <div class="sets-top"><b id="setsRx">3 × 10</b><span id="setsUnit">reps</span><span class="rest muted" id="setsRest"></span></div>
+        <div class="sug" id="sugLine" hidden></div>
+        <div class="set-tbl" id="setTbl"></div>
+        <div class="set-extra" id="setExtra"></div>
         <div class="set-row" id="setRow"></div>
         <button class="next-btn" id="nextBtn">Next exercise <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
@@ -352,9 +456,10 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
     </div>
   </div>
 </div>
+<div class="modal" id="sumModal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sumTitle" id="sumCard"></div></div>
 <div class="toast" id="toast" role="status"></div>
 <script src="three.min.js"></script>
-<script src="app.js?v=d5feda22"></script>
+<script src="app.js?v=ded6a4de"></script>
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
