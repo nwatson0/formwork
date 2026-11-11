@@ -1,0 +1,2 @@
+The 3D mannequin mesh is derived from the MakeHuman base mesh, shape targets, rig and skin weights,
+released under CC0 1.0 (public domain) by the MakeHuman community: https://github.com/makehumancommunity/makehuman
