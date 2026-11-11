@@ -3530,6 +3530,7 @@ const FORM = (function () {
     const sb = $('#progSug'); if (sb) sb.addEventListener('click', () => { showTab('train'); applySuggestion(); });
     $('#expBtn').addEventListener('click', () => {
       const data = JSON.stringify({ app: 'formwork', v: 1, at: new Date().toISOString(), hist: st.hist, log: st.log, prs: st.prs, routines: st.routines, units: st.units, eq: st.eq, favs: st.favs });
+      if (window.self !== window.top) { (navigator.clipboard ? navigator.clipboard.writeText(data) : Promise.reject()).then(() => toast('Backup copied — paste it into Notes to keep it'), () => toast('Open the home-screen app to export a backup')); return; }
       try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' })); a.download = `formwork-backup-${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast('Backup downloaded'); }
       catch (err) { navigator.clipboard && navigator.clipboard.writeText(data).then(() => toast('Backup copied to clipboard')); }
     });
