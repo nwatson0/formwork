@@ -189,6 +189,10 @@ const COACH = (function () {
   inherit('cable-lateral band-lateral seated-lateral', C['db-lateral']);
   inherit('band-face-pull', C['face-pull']);
   inherit('rack-pull', C.deadlift, { key: 'Same rules as a deadlift from higher up: bar against your legs, flat back, finish by standing tall — not by leaning back.', setup: ['Set the pins so the bar sits just below your knees.', 'Bar over mid-foot, touching your legs. Grip just outside your legs.', 'Flat back, shoulders just ahead of the bar. Breathe and brace.'] });
+  inherit('assisted-chinup', C.chinup);
+  inherit('bw-lunge bb-lunge', lunge);
+  inherit('db-split-squat', C['split-squat']);
+  inherit('bw-bulgarian', C.bulgarian);
   // ---- "the one thing" and callouts for every other movement type ----
   const PAT = {
     hpress: ['Shoulder blades stay back and down, and your forearms stay in line with the direction you are pushing.'],
@@ -268,6 +272,7 @@ const COACH = (function () {
     calf: ['Full range: a deep stretch at the bottom, a one-second pause at the very top. No bouncing.', [pin('heelL', 'Full stretch, full rise'), knee('Knee — stays straight')]],
     'calf-s': ['Full range: a deep stretch at the bottom, a one-second pause at the very top. No bouncing.', [pin('heelL', 'Full stretch, full rise')]],
     tib: ['Heels stay planted; pull your toes up as high as possible and lower slowly.', [pin('toeL', 'Toes all the way up')]],
+    'vpress-s': ['Press straight up with forearms vertical; squeeze your glutes and keep your ribs down so your lower back does not arch.', [path('grips', 'Straight up'), spine('Ribs down'), pin('elbowL', 'Elbows under the weights')]],
     plank: C.plank.key, lunge: lunge.key, facepull: C['face-pull'].key, pushdown: C.pushdown.key, lat: C['db-lateral'].key, vpull: pull.key, 'vpull-c': C['lat-pulldown'].key,
     dpress: press.key, ipress: C['bb-incline'].key, 'hpress-bw': C.pushup.key, 'ipress-bw': C.pushup.key, 'dpress-bw': C.pushup.key, 'hpress-cg': C['close-bench'].key,
   };

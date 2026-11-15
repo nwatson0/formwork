@@ -205,7 +205,7 @@ M.mountain = ({ susp = false } = {}) => {
   const ank = [0, .19, 0], t0 = plank(18, ank), Jt = J0(t0), hz = Jt.shL[2] + .03;
   const hands = ikArms([.28, .035, hz], [.6, .3, -.7], 'w');
   const back = (s) => ({ t: [s * .12, .19, .02], pole: [s * .1, -1, .3], fd: [0, -1, .25] });
-  const fwd = (s) => ({ t: [s * .12, .3, .68], pole: [s * .1, -1, 1], fd: [0, -.6, .8] });
+  const fwd = (s) => ({ t: [s * .12, .34, .6], pole: [s * .1, -.25, 1], fd: [0, -.6, .8] });
   const a = { ...t0, ...hands, lL: fwd(1), lR: back(-1) };
   const b = { ...t0, ...hands, lL: back(1), lR: fwd(-1) };
   return { frames: [a, b], props: [], labels: ['Drive right knee', 'Drive left knee'], t1: .5, t2: .5, h1: .05, h2: .05, view: V3(72, 12) };
@@ -267,8 +267,8 @@ M.frontRaise = ({ imp = 'db' } = {}) => {
   return { frames: [a, b], props, labels: ['Raise to eye level', 'Lower slowly'], t1: 1.2, t2: 1.7, view: V3(70, 8) };
 };
 M.reverseFly = ({ imp = 'db' } = {}) => {
-  const base = stand({ root: [0, .9, -.16], pel: [52, 0, 0], lum: [10, 0, 0], neck: -18, ...LEGS_STAND(.15) });
-  const a = { ...base, ...symArms({ el: 62, az: 6, bend: 22 }) };
+  const base = stand({ root: [0, .88, -.22], pel: [64, 0, 0], lum: [10, 0, 0], neck: -22, ...LEGS_STAND(.15) });
+  const a = { ...base, ...symArms({ el: 74, az: 6, bend: 22 }) };
   const b = { ...base, ...symArms({ el: 88, az: 86, bend: 22 }) };
   return { frames: [a, b], props: [J => PROP.dbs(J, 'pf')], labels: ['Sweep arms out wide', 'Lower slowly'], t1: 1.1, t2: 1.6, view: V3(30, 22) };
 };

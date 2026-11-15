@@ -682,3 +682,39 @@ X('plank-tap', 'Plank shoulder tap', [], ['deep-core'], ['obliques', 'front-delt
 X('side-plank-dip', 'Side plank hip dip', [], ['obliques'], ['glute-med', 'deep-core'], { l: 1, p: 'sideplank' }, () => M.sidePlankDip(),
   ['Get into a side plank on your forearm.', 'Lower your hip toward the floor.', 'Lift it back up high.'],
   ['Elbow under your shoulder'], ['Rolling forward', 'Rushing']);
+X('standing-db-press', 'Standing dumbbell press', ['dumbbells'], ['front-delts', 'side-delts'], ['triceps-lateral', 'upper-chest', 'deep-core'], { l: 2, c: 1, p: 'vpress-s' }, () => M.ohp({ imp: 'db' }),
+  ['Stand with feet hip-width apart, dumbbells at shoulder height, forearms vertical.', 'Squeeze your glutes and brace your stomach.', 'Press both dumbbells straight up until your arms are straight.', 'Lower under control to shoulder height.'],
+  ['Ribs down — no leaning back', 'Finish with arms beside your ears'], ['Arching the lower back to get the weight up', 'Letting elbows flare far behind the body']);
+X('db-upright-row', 'Dumbbell upright row', ['dumbbells'], ['side-delts', 'traps'], ['front-delts', 'biceps-long'], { l: 1, p: 'urow' }, () => M.uprightRow({ imp: 'db' }),
+  ['Stand tall holding dumbbells in front of your thighs, palms facing you.', 'Pull your elbows up and out, keeping the dumbbells close to your body.', 'Stop when your elbows reach shoulder height.', 'Lower slowly.'],
+  ['Elbows lead, hands follow', 'Dumbbells let your wrists turn freely — let them'], ['Pulling elbows above shoulder height', 'Swinging the weights up']);
+X('db-preacher', 'Dumbbell preacher curl', ['dumbbells', 'preacher'], ['biceps-short'], ['brachialis', 'biceps-long'], { l: 1, p: 'curl-short', uni: 1 }, () => M.preacher({ imp: 'db' }),
+  ['Sit at the preacher bench with your armpit snug against the top of the pad.', 'Start with your arm almost straight.', 'Curl the dumbbell up without lifting your upper arm off the pad.', 'Lower slowly until nearly straight.'],
+  ['Upper arm glued to the pad', 'Slow on the way down'], ['Bouncing out of the bottom', 'Lifting the elbow off the pad']);
+X('assisted-chinup', 'Assisted chin-up', ['assist'], ['lats', 'biceps-short'], ['biceps-long', 'upper-back', 'brachialis'], { l: 1, c: 1, p: 'vpull-c' }, () => M.pullup({ grip: 'chin', assist: true }),
+  ['Set the assistance weight, kneel on the pad and take a shoulder-width underhand grip.', 'Start from straight arms with shoulders pulled down.', 'Pull your chest toward the bar.', 'Lower all the way under control.'],
+  ['Reduce the assistance a little every week or two', 'Chest up to the bar'], ['Half reps', 'Shrugging at the bottom']);
+X('bw-lunge', 'Bodyweight forward lunge', [], ['quads', 'glute-max'], ['hamstrings', 'adductors', 'glute-med'], { l: 1, c: 1, p: 'lunge', uni: 1 }, () => M.lunge({ type: 'fwd', imp: 'bw' }),
+  ['Stand tall with feet hip-width apart.', 'Take a long step forward and lower until both knees are bent to about 90°.', 'Push through the whole front foot to return.', 'Alternate legs or finish one side first.'],
+  ['Front knee in line with your toes', 'Torso tall'], ['Short steps that push the knee far past the toes', 'Front knee caving in']);
+X('bb-lunge', 'Barbell lunge', ['barbell', 'rack'], ['quads', 'glute-max'], ['hamstrings', 'adductors', 'deep-core'], { l: 3, c: 1, p: 'lunge', uni: 1 }, () => M.lunge({ type: 'fwd', imp: 'bb' }),
+  ['Set the bar on your upper back as for a squat and step away from the rack.', 'Step forward and lower until both knees are bent to about 90°.', 'Push through the front foot to stand back up.', 'Alternate legs.'],
+  ['Brace before every step', 'Feet on train tracks, not a tightrope'], ['Losing balance by stepping too narrow', 'Leaning the chest forward']);
+X('db-split-squat', 'Dumbbell split squat', ['dumbbells'], ['quads', 'glute-max'], ['hamstrings', 'adductors'], { l: 1, c: 1, p: 'lunge-s', uni: 1 }, () => M.lunge({ type: 'split', imp: 'db' }),
+  ['Hold dumbbells at your sides and take a long split stance.', 'Lower straight down until your back knee almost touches the floor.', 'Push through the front foot to rise.', 'Finish all reps, then switch legs.'],
+  ['Go straight down, not forward', 'Front foot stays flat'], ['Stance too short', 'Front knee caving in']);
+X('bw-bulgarian', 'Bodyweight Bulgarian split squat', [['bench', 'box']], ['quads', 'glute-max'], ['hamstrings', 'adductors', 'glute-med'], { l: 1, c: 1, p: 'lunge-s', uni: 1 }, () => M.lunge({ type: 'bulgarian', imp: 'bw' }),
+  ['Stand about two foot-lengths in front of a bench and rest the top of your back foot on it.', 'Lower until your front thigh is about level with the floor.', 'Push through the front foot to rise.', 'Finish all reps, then switch legs.'],
+  ['Most of your weight on the front leg', 'Learn the balance here before adding dumbbells'], ['Standing too close to the bench', 'Pushing off the back foot']);
+X('sl-hip-thrust', 'Single-leg hip thrust', ['bench'], ['glute-max'], ['hamstrings', 'glute-med', 'deep-core'], { l: 2, p: 'thrust-u', uni: 1 }, () => M.hipThrust({ single: true, imp: 'bw' }),
+  ['Sit with your shoulder blades against the long edge of a bench, one foot planted, the other leg lifted.', 'Drive through the planted heel and lift your hips until your body is level.', 'Squeeze the glute for a second.', 'Lower under control, then switch sides.'],
+  ['Hips stay level', 'Chin tucked, ribs down'], ['Free-side hip dropping', 'Arching the lower back at the top']);
+X('bb-glute-bridge', 'Barbell glute bridge', ['barbell'], ['glute-max'], ['hamstrings', 'deep-core'], { l: 1, p: 'thrust' }, () => M.hipThrust({ floor: true, imp: 'bb' }),
+  ['Lie on your back with knees bent and roll a padded barbell over your hips.', 'Hold the bar steady with both hands.', 'Drive through your heels and lift your hips until your body is straight from knees to shoulders.', 'Squeeze, then lower slowly.'],
+  ['Shins vertical at the top', 'Ribs down — finish with glutes, not your back'], ['Arching the lower back', 'Pushing through the toes']);
+X('db-glute-bridge', 'Dumbbell glute bridge', ['dumbbells'], ['glute-max'], ['hamstrings', 'deep-core'], { l: 1, p: 'thrust' }, () => M.hipThrust({ floor: true, imp: 'db' }),
+  ['Lie on your back with knees bent and rest a dumbbell across your hips.', 'Hold it in place with both hands.', 'Drive through your heels and lift your hips until your body is straight from knees to shoulders.', 'Squeeze, then lower slowly.'],
+  ['Shins vertical at the top', 'Pause for a second at the top'], ['Arching the lower back', 'Feet too far away']);
+X('step-calf', 'Calf raise off a step', ['box'], ['gastrocnemius'], ['soleus'], { l: 1, p: 'calf' }, () => M.calfRaise({ step: true }),
+  ['Stand with the balls of your feet on the edge of a step, heels hanging off.', 'Lower your heels for a deep stretch.', 'Rise as high as you can and pause for a second.', 'Lower slowly.'],
+  ['Full stretch, full rise', 'Hold something lightly for balance'], ['Bouncing', 'Short reps']);
