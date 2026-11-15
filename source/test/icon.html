@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}#w{width:1024px;height:1024px;background:radial-gradient(70% 60% at 50% 38%,#2a2c35 0%,#101116 60%,#040405 100%);position:relative}canvas{position:absolute;inset:0;width:1024px;height:1024px}</style></head>
+<body><div id="w"><canvas id="cv"></canvas></div>
+<script src="../node_modules/three/build/three.min.js"></script>
+<script src="../engine.js"></script><script src="../moves.js"></script><script src="../data.js"></script><script src="../body.js"></script><script src="../stage.js"></script>
+<script>
+const st=new FW3.Stage(document.getElementById('cv'),{preserve:true,maxDpr:1,shadowSize:2048});
+st.resize(1024,1024); st.floor.visible=false; st.ring.visible=false;
+const P={...BODY_MESH.bind};
+const J=solvePose(P); st.pose(J); st.props([]);
+st.setHighlight({'upper-chest':2,'mid-chest':2,'lower-chest':2,'front-delts':2,'side-delts':2});
+const b={center:[0,0.93,0],rad:0.62,ymin:0.0,ymax:1.86};
+st.aim(b, 16, 4, 1.0, 0.0); st.render(0.35);
+document.title='done';
+</script></body></html>

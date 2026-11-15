@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#050607;color:#ddd;font:11px sans-serif}.g{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);gap:4px;padding:4px}.c{background:radial-gradient(#23262d,#0a0b0d);border-radius:8px;overflow:hidden}.c b{display:block;padding:3px 6px}img{width:50%;display:inline-block;vertical-align:top}</style></head>
+<body><div class="g" id="g"></div><canvas id="cv" style="position:fixed;left:-9999px"></canvas>
+<script src="../node_modules/three/build/three.min.js"></script>
+<script src="../engine.js"></script><script src="../moves.js"></script><script src="../data.js"></script><script src="../body.js"></script><script src="../stage.js"></script><script src="../form.js"></script>
+<script>
+const q=new URLSearchParams(location.search); document.documentElement.style.setProperty('--cols', q.get('cols')||4);
+const W=+(q.get('w')||360), H=+(q.get('h')||440);
+const st=new FW3.Stage(document.getElementById('cv'),{preserve:true, shadowSize:1024}); if(q.get('noenv')) st.scene.environment=null;
+st.resize(W,H); if(q.get('dbg')) st.bodyMat.userData.u.uDbg.value=1;
+const g=document.getElementById('g');
+function shot(def, A, fi, yaw, pitch, hl){
+  const pose=A.frames[fi]; const J=solvePose(pose); st.pose(J); st.props(A.propPrims(J,pose)); st.setHighlight(hl||{});
+  st.aim(A.bounds(), yaw??def.view.yaw, pitch??def.view.pitch); st.render(0.5); return document.getElementById('cv').toDataURL();
+}
+if (q.get('bind')) {
+  const bp={...BODY_MESH.bind, hands:+(q.get('curl')||0)}; if(q.get('grip')) bp.grip=isNaN(+q.get('grip'))?q.get('grip'):+q.get('grip'); const def={frames:[bp], view:{yaw:0,pitch:5}, props:q.get('bar')?[J=>[cap(madd(J.armL.grip,J.armL.t,-.2),madd(J.armL.grip,J.armL.t,.2),+(q.get('bar')),'steel'),cap(madd(J.armR.grip,J.armR.t,-.2),madd(J.armR.grip,J.armR.t,.2),+(q.get('bar')),'steel')]]:[]}; const A=new Anim(def); if(q.get('zoom')){ const z=q.get('zoom').split(',').map(Number); A._cache={center:[z[0],z[1],z[2]],rad:z[3],ymin:z[1]-z[3],ymax:z[1]+z[3]}; }
+  const hl = q.get('hl') ? Object.fromEntries(q.get('hl').split(',').map(x=>[x,2])) : {};
+  for (const y of (q.get('yaws')||'0,45,90,180').split(',').map(Number)) { const d=document.createElement('div'); d.className='c'; d.innerHTML='<b>yaw '+y+'</b>'; const im=new Image(); im.src=shot(def,A,0,y,+(q.get('pitch')||5),hl); im.style.width='100%'; d.appendChild(im); g.appendChild(d); }
+} else {
+  const ids=q.get('ids')?q.get('ids').split(','):EX.slice(+(q.get('from')||0),+(q.get('to')||12)).map(e=>e.id);
+  for (const id of ids){ const e=EX.find(x=>x.id===id); const def=e.anim(); const A=new Anim(def);
+    const hl={}; e.sec.forEach(s=>hl[s]=1); e.pri.forEach(s=>hl[s]=2);
+    const d=document.createElement('div'); d.className='c'; d.innerHTML='<b>'+e.name+'</b>'; g.appendChild(d);
+    const fr = q.get('fr') ? q.get('fr').split(',').map(Number) : def.frames.length>2?[1,2]:[0,1];
+    const hand = q.get('hand');   // zoom on a hand: L or R, or a joint name (root)
+    for (const fi of fr){
+      let A2 = A;
+      if (hand) { A2 = new Anim(def); const Jh = solvePose(A2.frames[fi]); const g = hand==='root' ? Jh.root : Jh['arm'+hand].grip; const rz = hand==='root' ? .35 : .13; A2._cache = {center:g, rad:rz, ymin:g[1]-rz, ymax:g[1]+rz}; }
+      const im=new Image(); im.src=shot(def,A2,fi,q.get('yaw')!=null?+q.get('yaw'):null,q.get('pitch')!=null?+q.get('pitch'):null,hl); d.appendChild(im);} }
+}
+document.title='done';
+</script></body></html>
