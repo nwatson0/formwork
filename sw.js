@@ -1,6 +1,6 @@
 // Offline support: keeps the app working in the gym with no signal.
-const CACHE = 'formwork-c4e07aef';
-const ASSETS = ['./', 'index.html', 'app.js?v=c4e07aef', 'three.min.js', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
+const CACHE = 'formwork-75ddad47';
+const ASSETS = ['./', 'index.html', 'app.js?v=75ddad47', 'three.min.js', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 const put = (req, res) => { const c = res.clone(); caches.open(CACHE).then(ca => ca.put(req, c)); return res; };

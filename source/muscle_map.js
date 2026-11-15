@@ -10,6 +10,18 @@ module.exports = function paint(c) {
   const rng = (x, lo, hi, w) => { w *= 1.5; return ss(lo - w, lo + w, x) * (1 - ss(hi - w, hi + w, x)); };
   const angd = (a, b) => { let d = ((a - b) % 360 + 540) % 360 - 180; return d; };
   const ang = (phi, lo, hi, w = 10) => { const mid = (lo + hi) / 2, half = (hi - lo) / 2, d = Math.abs(angd(phi, mid)); w *= 1.3; return 1 - ss(half - w, half + w, d); };
+  // soft polygon: 1 inside, 0.5 on the outline, 0 outside by w (points are [u, v] pairs in metres)
+  const poly = (P, u, v, w = 0.012) => {
+    let d = 1e9, inside = false;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const ax = P[j][0], ay = P[j][1], bx = P[i][0], by = P[i][1], ex = bx - ax, ey = by - ay;
+      const k = Math.max(0, Math.min(1, ((u - ax) * ex + (v - ay) * ey) / (ex * ex + ey * ey)));
+      d = Math.min(d, Math.hypot(u - ax - ex * k, v - ay - ey * k));
+      if ((ay > v) !== (by > v) && u < ax + (v - ay) * ex / ey) inside = !inside;
+    }
+    return 1 - ss(-w, w, inside ? -d : d);
+  };
+  const TH = 0.0028;   // metres of skin per degree around the hips
   const A = J.armL, Lg = J.legL;
   const mk = (o, y, z) => ({ o, y, z, x: cross(y, z) });
   const FU = mk(A.base, A.d, A.b), FF = mk(A.j1, A.c, norm(A.pf)), FT = mk(Lg.base, Lg.d, c.ENG.mul(Lg.b, -1)), FS = mk(Lg.j1, Lg.c, norm(c.ENG.mul(Lg.pf, -1)));
@@ -32,17 +44,21 @@ module.exports = function paint(c) {
       const { t, phi, rho } = cyl(FU, p, DIM.ua);
       const mem = ss(0.25, 0.7, wUA + wFA * .6);
       const lowFade = 1 - ss(0.86, 1.0, t);
-      put('biceps-long', mem * rng(t, 0.36, 0.93, 0.07) * ang(phi, -8, 52) * lowFade);
-      put('biceps-short', mem * rng(t, 0.36, 0.93, 0.07) * ang(phi, -78, -8) * lowFade);
-      put('brachialis', mem * rng(t, 0.6, 0.97, 0.06) * ang(phi, 52, 98, 8));
-      put('triceps-lateral', mem * rng(t, 0.3, 0.9, 0.07) * ang(phi, 98, 172));
-      put('triceps-long', mem * rng(t, 0.2, 0.92, 0.07) * ang(phi, 172, 282));
-      // deltoid: a cap around the shoulder joint running down to its insertion on the outer arm
+      // deltoid: a cap over the shoulder that narrows to a point half-way down the outer arm
+      const dOff = Math.min(1, Math.abs(angd(phi, 88)) / 100), dLow = 0.47 - 0.27 * Math.pow(dOff, 1.15);
       const capR = 0.105 - Math.max(0, t) * 0.07;
-      const dm = ss(0.06, 0.3, wUA + wCl * .8) * rng(t, -0.3, 0.4, 0.07) * (1 - ss(capR - 0.012, capR + 0.012, rho - Math.max(0, -t) * 0.0)) * (1 - ss(0.1, 0.135, vlen(sub(p, A.base)) - Math.max(0, t) * DIM.ua * .75));
-      put('front-delts', dm * ang(phi, -38, 42, 9));
-      put('side-delts', dm * ang(phi, 42, 128, 9));
-      put('rear-delts', dm * ang(phi, 128, 212, 9));
+      const dm = ss(0.06, 0.3, wUA + wCl * .8) * rng(t, -0.3, dLow, 0.035) * (1 - ss(capR - 0.012, capR + 0.012, rho)) * (1 - ss(0.1, 0.135, vlen(sub(p, A.base)) - Math.max(0, t) * DIM.ua * .75));
+      put('front-delts', dm * ang(phi, -42, 40, 9));
+      put('side-delts', dm * ang(phi, 40, 130, 9));
+      put('rear-delts', dm * ang(phi, 130, 218, 9));
+      // arm muscles start where the deltoid ends
+      const under = ss(dLow - 0.03, dLow + 0.05, t);
+      const belly = (lo, hi) => rng(t, lo, hi, 0.07);
+      put('biceps-long', mem * belly(0.2, 0.92) * ang(phi, -6, 46) * lowFade * Math.max(under, ang(phi, -60, 0, 6) * ss(0.16, 0.26, t)));
+      put('biceps-short', mem * belly(0.2, 0.92) * ang(phi, -72, -6) * lowFade * ss(0.16, 0.26, t));
+      put('brachialis', mem * rng(t, 0.58, 0.97, 0.06) * ang(phi, 46, 96, 8));
+      put('triceps-lateral', mem * belly(0.3, 0.84) * ang(phi, 96, 176) * under);
+      put('triceps-long', mem * belly(0.14, 0.86) * ang(phi, 176, 288) * Math.max(under, ang(phi, 200, 288, 6)));
     }
     /* ---- forearm ---- */
     if (wFA + wUA * .3 > 0.04) {
@@ -73,33 +89,48 @@ module.exports = function paint(c) {
     if (wTor + wCl + wTh * .5 > 0.15) {
       const mem = ss(0.15, 0.55, wTor + wCl + wNk * .6);
       const memHip = ss(0.15, 0.55, wTor + wTh);
-      // chest: fan between collar bone and the lower pec line
-      const lowLine = 1.268 + 0.55 * Math.max(0, x - 0.1) + 0.9 * Math.pow(Math.max(0, 0.06 - x), 1.5), topLine = 1.475 - 0.1 * x;
-      const pec = mem * front * rng(x, 0.004, 0.2, 0.014) * rng(y, lowLine, topLine, 0.014) * (1 - ss(60, 78, theta));
-      const u1 = 1.4 + 0.12 * x, u2 = 1.335 + 0.06 * x;   // split lines (rise toward the armpit like the fibres)
-      put('upper-chest', pec * (1 - ss(-0.012, 0.006, u1 - y)));
-      put('mid-chest', pec * rng(y, u2, u1, 0.008));
-      put('lower-chest', pec * (1 - ss(-0.006, 0.012, y - u2)));
-      // abs
       const absX = 0.066 - 0.012 * ss(1.1, 0.96, y);
-      put('upper-abs', mem * front * rng(x, -1, absX, 0.012) * rng(y, 1.168, lowLine - 0.006, 0.012));
+      // chest: a fan from the collar bone, breastbone and upper ribs that converges on the upper arm
+      const PEC = [[0.004, 1.452], [0.05, 1.472], [0.112, 1.478], [0.152, 1.435], [0.188, 1.378], [0.172, 1.332], [0.128, 1.29], [0.07, 1.268], [0.02, 1.274], [0.004, 1.3]];
+      const pec = mem * front * poly(PEC, x, y, 0.011) * (1 - ss(62, 80, theta));
+      const fa = Math.atan2(y - 1.385, 0.2 - x) * 180 / Math.PI;      // fibre direction, measured from the arm attachment
+      put('upper-chest', pec * ss(6.5, 11.5, fa));
+      put('mid-chest', pec * ss(-13.5, -8.5, fa) * (1 - ss(6.5, 11.5, fa)));
+      put('lower-chest', pec * (1 - ss(-13.5, -8.5, fa)));
+      // abs: upper edge follows the arch of the ribs
+      const arch = 1.283 - 0.35 * x;
+      put('upper-abs', mem * front * rng(x, -1, absX, 0.012) * rng(y, 1.168, arch, 0.012));
       put('lower-abs', memHip * front * rng(x, -1, absX, 0.012) * rng(y, 0.93, 1.168, 0.012));
-      // obliques, serratus
-      put('obliques', mem * rng(theta, 27 + 14 * ss(1.1, 1.24, y), 104 + 40 * ss(1.2, 1.08, y), 9) * rng(y, 1.035, 1.235 + 0.04 * ss(40, 90, theta), 0.016) * (1 - ss(absX - 0.01, absX + 0.012, 0.0) * 0) * ss(absX - 0.006, absX + 0.014, x));
-      put('serratus', mem * rng(theta, 52, 100, 8) * rng(y, 1.245 + 0.03 * ss(40, 90, theta), 1.345, 0.012) * (1 - pec * 1.2 > 0 ? 1 : 0));
-      // back
-      const latTop = 1.4, spineEdge = 0.05 + 0.035 * ss(1.14, 1.34, y) - 0.02 * ss(1.34, 1.42, y);
-      const sideLat = 0.5 + 0.5 * ss(1.2, 1.3, y);     // the lat only wraps to the side high up, under the armpit
-      put('lats', mem * rng(theta, 92 + 50 * (1 - sideLat), 181, 8) * ss(spineEdge - 0.03, spineEdge + 0.03, x) * rng(y, 1.115, latTop, 0.022));
-      put('lower-back', memHip * back * (1 - ss(spineEdge - 0.03, spineEdge + 0.03, x)) * rng(y, 1.0, 1.245, 0.014));
-      put('upper-back', mem * back * (1 - ss(spineEdge - 0.03, spineEdge + 0.03, x)) * rng(y, 1.245, 1.43, 0.02));
-      put('upper-back', mem * back * rng(x, 0.03, 0.095, 0.02) * rng(y, 1.4, 1.43, 0.018));
-      put('rotator-cuff', mem * back * rng(x, 0.095, 0.185, 0.02) * rng(y, latTop, 1.45, 0.018));
+      // obliques run from the lower ribs down and forward to the hip bone; serratus are the "fingers" on the ribs under the armpit
+      const obTop = 1.215 + 0.0011 * Math.max(0, theta - 25), obLow = 1.02 + 0.0006 * Math.max(0, theta - 25);
+      put('obliques', mem * rng(theta, 24 + 10 * ss(1.1, 1.24, y), 142, 9) * rng(y, obLow, obTop, 0.016) * ss(absX - 0.006, absX + 0.014, x));
+      const srT = 1.262 + 0.0016 * (theta - 50);
+      put('serratus', mem * rng(theta, 46, 96, 8) * rng(y, srT - 0.03, srT + 0.07, 0.012) * (1 - Math.min(1, pec * 1.6)));
+      // ---- back ----
+      const bk = ss(88, 108, theta);
+      // trapezius (upper part): neck to the point of the shoulder
+      const TRAP = [[0, 1.6], [0.04, 1.585], [0.062, 1.53], [0.12, 1.497], [0.178, 1.478], [0.168, 1.452], [0.105, 1.44], [0.05, 1.428], [0, 1.418]];
       const trapTop = ss(-0.3, 0.3, n[1]);
-      put('traps', ss(0.15, 0.5, wTor + wCl + wNk) * Math.max(back * rng(x, -1, 0.15, 0.02) * rng(y, 1.43, 1.56, 0.018), trapTop * rng(x, 0.035, 0.145, 0.014) * rng(y, 1.46, 1.56, 0.012) * ss(-0.03, 0.02, ZC + 0.01 - z)));
-      // hips
-      put('glute-max', memHip * rng(theta, 108, 200, 10) * rng(y, 0.85, 1.025, 0.016));
-      put('glute-med', memHip * rng(theta, 60, 108, 9) * rng(y, 0.985, 1.075, 0.014));
+      put('traps', ss(0.15, 0.5, wTor + wCl + wNk) * Math.max(back * poly(TRAP, x, y, 0.012), trapTop * rng(x, 0.035, 0.15, 0.014) * rng(y, 1.46, 1.56, 0.012) * ss(-0.03, 0.02, ZC + 0.01 - z)));
+      // rhomboids and middle/lower trapezius: a kite between the shoulder blades that ends in a point at mid-back
+      const KITE = [[0, 1.428], [0.05, 1.436], [0.105, 1.445], [0.102, 1.37], [0.066, 1.285], [0.024, 1.215], [0, 1.195]];
+      put('upper-back', mem * back * poly(KITE, x, y, 0.012));
+      // rotator cuff: the muscles lying on the shoulder blade
+      const CUFF = [[0.105, 1.448], [0.168, 1.458], [0.2, 1.425], [0.19, 1.375], [0.145, 1.335], [0.104, 1.352]];
+      put('rotator-cuff', mem * back * poly(CUFF, x, y, 0.012));
+      // lats: a wing from the armpit sweeping down and in to the lower spine
+      const LAT = [[0.26, 1.395], [0.19, 1.368], [0.145, 1.328], [0.104, 1.345], [0.068, 1.275], [0.03, 1.205], [0.024, 1.13], [0.05, 1.085], [0.12, 1.1], [0.17, 1.16], [0.21, 1.25], [0.26, 1.3]];
+      const wrap = ss(88 + 44 * ss(1.24, 1.12, y), 104 + 44 * ss(1.24, 1.12, y), theta);
+      put('lats', mem * wrap * poly(LAT, Math.max(x, theta < 125 ? 0.2 : 0), y, 0.014));
+      // spinal erectors: two columns that widen over the lumbar area
+      const ERE = [[0, 1.2], [0.022, 1.21], [0.026, 1.13], [0.05, 1.082], [0.105, 1.086], [0.1, 1.04], [0.06, 1.005], [0, 0.995]];
+      put('lower-back', memHip * bk * poly(ERE, x, y, 0.012));
+      // ---- hips (theta, y) ----
+      const u = theta * TH;
+      const GMAX = [[181, 1.02], [166, 1.03], [142, 1.008], [120, 0.965], [107, 0.905], [110, 0.855], [135, 0.836], [165, 0.84], [181, 0.852]].map(q => [q[0] * TH, q[1]]);
+      const GMED = [[70, 1.05], [100, 1.076], [140, 1.066], [160, 1.042], [142, 1.008], [120, 0.965], [106, 0.915], [90, 0.922], [76, 0.98]].map(q => [q[0] * TH, q[1]]);
+      put('glute-max', memHip * poly(GMAX, u, y, 0.014));
+      put('glute-med', memHip * poly(GMED, u, y, 0.013));
       put('hip-flexors', memHip * front * rng(theta, 14, 56, 8) * rng(y, 0.9, 1.0, 0.014));
     }
     if (c.EYEV[i][0] > 0.5 || wNk > 0.85 || wH > 0.6 || wFt > 0.7) best = 0;

@@ -172,6 +172,106 @@ const COACH = (function () {
       cues: ['Hips do not move', 'Round your spine', 'Hands stay by your head', 'Exhale as you crunch'], avoid: ['Sitting your hips back', 'Pulling with your arms', 'Bending only at the hips with a flat back'],
       guides: [pin('hips', 'Hips stay still'), pin('chest', 'Ribs to hips'), spine('Round the spine')] },
   };
+  // ---- variations inherit the full coaching of their parent lift ----
+  const inherit = (ids, base, extra = {}) => { for (const id of ids.split(' ')) if (!C[id]) C[id] = { ...base, ...extra }; };
+  inherit('bb-decline smith-bench smith-incline', press);
+  inherit('db-decline db-floor-press', dbPress);
+  inherit('wide-pushup decline-pushup incline-pushup knee-pushup diamond-pushup', C.pushup);
+  inherit('smith-squat pause-squat box-squat', squat);
+  inherit('kb-goblet-squat', C['goblet-squat']);
+  inherit('kb-rdl', hinge, { setup: ['Stand tall holding the kettlebell with both hands in front of your thighs.', 'Unlock your knees slightly — that small bend stays the same throughout.', 'Pull your shoulders back and brace.'] });
+  inherit('assisted-pullup neutral-pullup', pull);
+  inherit('close-pulldown', C['lat-pulldown']);
+  inherit('cable-curl band-curl', curl);
+  inherit('rope-pushdown band-pushdown', C.pushdown);
+  inherit('bb-reverse-lunge', lunge);
+  inherit('seated-bb-press', C.ohp, { key: 'Press straight up close to your face and finish with the bar over your shoulders — ribs down, back against the pad.', guides: [path('grips', 'Straight up'), pin('elbowL', 'Elbows under the bar'), spine('Ribs down')] });
+  inherit('cable-lateral band-lateral seated-lateral', C['db-lateral']);
+  inherit('band-face-pull', C['face-pull']);
+  inherit('rack-pull', C.deadlift, { key: 'Same rules as a deadlift from higher up: bar against your legs, flat back, finish by standing tall — not by leaning back.', setup: ['Set the pins so the bar sits just below your knees.', 'Bar over mid-foot, touching your legs. Grip just outside your legs.', 'Flat back, shoulders just ahead of the bar. Breathe and brace.'] });
+  // ---- "the one thing" and callouts for every other movement type ----
+  const PAT = {
+    hpress: ['Shoulder blades stay back and down, and your forearms stay in line with the direction you are pushing.'],
+    fly: ['Keep the same soft bend in your elbows the whole time — the moment they bend more, it has turned into a press.', [elbow('Elbow — bend stays fixed'), path('grips', 'Wide arc'), pin('upback', 'Shoulder blades back')]],
+    'fly-i': ['Keep the same soft bend in your elbows, and lower only until your hands are level with your chest.', [elbow('Elbow — bend stays fixed'), path('grips', 'Wide arc'), pin('upback', 'Shoulder blades back')]],
+    'cfly-h': ['Chest up, shoulders back; hug a big barrel with fixed, slightly bent elbows.', [elbow('Elbow — bend stays fixed'), path('grips', 'High to low'), pin('shL', 'Shoulders stay back')]],
+    'cfly-l': ['Chest up, shoulders back; scoop upward with fixed, slightly bent elbows.', [elbow('Elbow — bend stays fixed'), path('grips', 'Low to high'), pin('shL', 'Shoulders stay back')]],
+    'cfly-m': ['Chest up, shoulders back; bring your hands together in a wide arc without your shoulders rolling forward.', [elbow('Elbow — bend stays fixed'), path('grips', 'Wide arc'), pin('shL', 'Shoulders stay back')]],
+    'fly-m': ['Shoulder blades stay against the pad; stop the stretch when your elbows are in line with your chest.', [pin('upback', 'Back on the pad'), elbow('Elbow — slightly bent')]],
+    dip: ['Shoulders stay down, away from your ears. Lower only until your upper arms are level with the floor.', [elbow('Elbow — stop near 90°'), pin('shL', 'Shoulders down'), line('hips', 'neck', 'Slight forward lean', 0)]],
+    'dip-b': ['Keep your back brushing the bench and shoulders down. Stop when your upper arms are level — going deeper strains the shoulder.', [elbow('Elbow — stop near 90°'), pin('hips', 'Hips close to the bench'), pin('shL', 'Shoulders down')]],
+    pullover: ['Ribs stay down and elbows keep the same slight bend — the movement comes from your shoulders only.', [elbow('Elbow — bend stays fixed'), pin('belly', 'Ribs down')]],
+    lpress: ['Lean into the bar slightly and press up and away — your ribs stay down and your lower back does not arch.', [path('grips', 'Up and forward'), spine('Ribs down'), pin('elbowL', 'Elbows under the bar')]],
+    svend: ['Squeeze the plate between your palms as hard as you can the whole time — the squeeze is the exercise.', [pin('grips', 'Squeeze hard'), spine('Stand tall')]],
+    'vpress-a': ['Rotate smoothly as you press, and keep your ribs down so your lower back does not arch.', [path('grips', 'Rotate as you press'), spine('Ribs down')]],
+    vpress: ['Press straight up with forearms vertical and your back against the pad.', [path('grips', 'Straight up'), spine('Back on the pad')]],
+    'vpress-bw': ['Hips stay high and your head travels forward of your hands, so you press like an upside-down shoulder press.', [pin('hips', 'Hips stay high'), pin('elbowL', 'Elbows back, not out')]],
+    front: ['Raise to eye level with almost straight arms and no swing from your body.', [level('shoulders', 'Stop at shoulder height'), spine('No lean-back')]],
+    rfly: ['Lead with your elbows and squeeze your shoulder blades together — keep it light and do not shrug.', [spine('Back flat'), elbow('Elbow — slightly bent'), pin('shL', 'No shrug')]],
+    urow: ['Elbows lead and stop at shoulder height. Pulling higher than that pinches the shoulder.', [pin('elbowL', 'Elbows lead'), level('shoulders', 'Stop at shoulder height')]],
+    extrot: ['Your elbow stays pinned to your side (a rolled towel helps). Only your forearm swings, like a door on a hinge.', [pin('elbowL', 'Elbow pinned to your side'), elbow('Elbow — keep 90°')]],
+    sapd: ['Arms stay straight; pull with your lats by sweeping the bar down to your thighs.', [elbow('Elbow — stays straight'), spine('Flat back'), path('grips', 'Arc to thighs')]],
+    hrow: ['Chest stays tall and still. Pull your elbows back and squeeze your shoulder blades together — do not rock.', [spine('Torso still'), arrow('elbowL', [0, .3, -1], 'Elbows back'), path('grips', 'To lower ribs')]],
+    'hrow-bw': ['Body stays in one straight line like a plank — pull your chest to the bar, do not let your hips drop.', [line('ankles', 'neck', 'Body straight'), pin('chest', 'Chest to the bar')]],
+    backext: ['Hinge at the hips with a flat back and stop when your body is in a straight line — do not arch past it.', [spine('Flat back'), line('ankles', 'neck', 'Stop at a straight line', 0)]],
+    'backext-bw': ['Lift by squeezing your glutes and upper back; keep your neck long and your eyes on the floor.', [pin('head', 'Eyes down'), pin('sacrum', 'Glutes squeeze')]],
+    hinge: ['Hips go back, back stays flat, knees stay softly bent.', [spine('Flat back'), arrow('hips', [0, 0, -1], 'Hips push back')]],
+    shrug: ['Straight up toward your ears and straight down. Do not roll your shoulders or bend your elbows.', [arrow('shL', [0, 1, 0], 'Straight up'), elbow('Elbow — stays straight')]],
+    renegade: ['Hips stay square to the floor — set your feet wide and do not let your body twist as you row.', [line('ankles', 'head', 'Straight line'), level('hips', 'Hips square')]],
+    'curl-long': ['Let your arms hang back behind your body and keep the upper arms still — the stretch is the point.', [pin('elbowL', 'Elbow stays back'), elbow('Elbow — full range')]],
+    'curl-short': ['Upper arm stays planted on the pad or your thigh; lower all the way without bouncing at the bottom.', [pin('elbowL', 'Upper arm planted'), elbow('Elbow — full range')]],
+    curl: curl.key, rcurl: ['Elbows pinned to your ribs and wrists straight, knuckles up, the whole way.', [pin('elbowL', 'Elbow pinned to ribs'), pin('wristL', 'Wrists straight')]],
+    hammer: ['Elbows pinned to your ribs, thumbs up, no swing.', [pin('elbowL', 'Elbow pinned to ribs'), elbow('Elbow — full range')]],
+    ohext: ['Elbows point at the ceiling and stay close to your head; only your forearms move.', [pin('elbowL', 'Elbows up and in'), elbow('Elbow — full range'), spine('Ribs down')]],
+    skull: ['Upper arms stay still, tilted slightly back toward your head; only your forearms move.', [pin('elbowL', 'Upper arms still'), elbow('Elbow — bend past 90°')]],
+    kickback: ['Upper arm stays level with your torso; straighten the elbow fully and pause.', [pin('elbowL', 'Upper arm level and still'), elbow('Elbow — finish straight')]],
+    wrist: ['Forearm stays planted; move only at the wrist through a full, slow range.', [pin('elbowL', 'Forearm planted'), pin('wristL', 'Only the wrist moves')]],
+    carry: ['Stand tall with shoulders back and down, ribs over hips, and take short, quick steps.', [spine('Tall posture'), level('shoulders', 'Shoulders level')]],
+    hang: ['Pull your shoulders down away from your ears and keep your ribs down — an active hang, not a slump.', [pin('shL', 'Shoulders pulled down'), spine('Ribs down')]],
+    crunch: ['Curl your ribs toward your hips. Your lower back stays on the floor and your hands only support your head.', [pin('chest', 'Ribs to hips'), pin('head', 'Do not pull your neck')]],
+    'crunch-w': ['Curl your spine — ribs to hips — instead of folding at the hips.', [pin('chest', 'Ribs to hips'), pin('hips', 'Hips stay still')]],
+    situp: ['Curl up one vertebra at a time and lower slowly; do not yank on your neck or throw your arms.', [pin('chest', 'Curl up'), pin('head', 'Neck relaxed')]],
+    legraise: ['No swinging. Tilt your pelvis up at the top — raising your legs without curling the hips mostly trains hip flexors.', [pin('hips', 'Curl the pelvis up'), pin('shL', 'No swing')]],
+    'legraise-bw': ['Your lower back stays pressed into the floor. Lower your legs only as far as you can keep it there.', [pin('lowback', 'Low back pressed down')]],
+    rcrunch: ['Curl your hips off the floor using your abs — do not swing your legs for momentum.', [pin('hips', 'Hips curl up'), pin('lowback', 'Slow on the way down')]],
+    antiext: ['Lower back stays pressed into the floor the whole time. If it lifts, shorten the movement.', [pin('lowback', 'Low back pressed down')]],
+    sideplank: ['Straight line from head to feet with hips stacked and lifted — elbow directly under your shoulder.', [line('ankles', 'head', 'Straight line'), pin('hips', 'Hips high')]],
+    rotation: ['Rotate through your ribs and shoulders with your hips fairly still, and control the return.', [pin('chest', 'Turn from the ribs'), pin('hips', 'Hips steady')]],
+    'rotation-c': ['Turn your shoulders and ribs, not just your arms, and keep your lower back steady.', [pin('chest', 'Turn from the ribs'), pin('hips', 'Hips steady')]],
+    antirot: ['Hips and shoulders stay square as you press out — resisting the twist is the exercise.', [level('shoulders', 'Shoulders square'), pin('hips', 'Hips square')]],
+    'antirot-bw': ['Hips stay level and still, like a table. Reach long, not high.', [level('hips', 'Hips level'), spine('Flat back')]],
+    'antiext-w': ['Squeeze your glutes and keep your ribs tucked. Roll out only as far as you can without your lower back sagging.', [line('knees', 'shoulders', 'No sag', 0), pin('lowback', 'Low back does not arch')]],
+    climber: ['Shoulders stay over your hands and hips stay level with your shoulders — do not bounce your backside up.', [line('ankles', 'head', 'Straight line'), pin('shL', 'Shoulders over hands')]],
+    sidebend: ['Bend directly sideways as if between two panes of glass — no leaning forward or back.', [spine('Straight sideways'), level('hips', 'Hips still')]],
+    slam: ['Reach tall, then slam by crunching your abs and hinging — finish with a flat back, not a rounded one.', [spine('Flat back at the bottom')]],
+    serratus: ['Arms stay straight. Push your shoulder blades apart at the top and let them come together at the bottom.', [elbow('Elbow — stays straight'), pin('upback', 'Push shoulder blades apart')]],
+    thrust: C['hip-thrust'].key, 'thrust-u': ['Hips stay level — do not let the free side drop — and finish by squeezing the glute of the working leg.', [level('hips', 'Hips level'), pin('kneeL', 'Shin vertical at the top')]],
+    'kickback-g': ['Move from the hip only. Your lower back stays still — if it arches, you have gone too far.', [spine('Back stays still'), pin('hips', 'Hips square')]],
+    'abd-bw': ['Hips stay stacked and still; lift from the side of your hip without rolling backward.', [pin('hips', 'Hips do not roll')]],
+    'abd-walk': ['Stay low with constant tension on the band — feet never come together, knees never cave in.', [pin('kneeL', 'Knees pushed out'), level('hips', 'Stay low and level')]],
+    abd: ['Sit tall and move slowly; pause at the widest point rather than bouncing.', [pin('kneeL', 'Pause at the top')]],
+    add: ['Move slowly and control the stretch on the way out — no bouncing.', [pin('kneeL', 'Slow return')]],
+    swing: ['It is a hip hinge, not a squat. Snap your hips forward to float the bell — your arms are just ropes.', [spine('Flat back'), arrow('hips', [0, 0, 1], 'Hips snap forward'), level('shoulders', 'Stop at chest height')]],
+    'hinge-dl': [C.deadlift.key, C.deadlift.guides], 'hinge-u': ['Hips stay square to the floor — do not let the free hip open up — and your back stays flat.', [spine('Flat back'), level('hips', 'Hips square')]],
+    stepup: ['Push through the whole top foot and do not spring off the bottom leg. Lower slowly.', [pin('kneeL', 'Knee in line with toes'), spine('Torso tall')]],
+    squat: squat.key, 'squat-bw': ['Sit down between your heels with your whole foot flat and knees in line with your toes.', [spine('Chest up'), pin('kneeL', 'Knees track over toes')]],
+    jump: ['Land softly on the middle of your feet with knees bent and in line with your toes — quiet landings.', [pin('kneeL', 'Knees out on landing'), spine('Chest up')]],
+    'squat-m': ['Back and hips stay flat on the pad; knees follow your toes and stop short of locking out.', [pin('lowback', 'Back on the pad'), pin('kneeL', 'Knees follow toes')]],
+    legext: ['Stay seated back in the chair, straighten fully and pause, then lower for 2–3 seconds. No kicking.', [knee('Knee — straighten fully'), pin('hips', 'Hips stay down')]],
+    'iso-q': ['Thighs level with the floor, knees over ankles, and your whole back flat against the wall.', [knee('Knee — hold 90°'), pin('lowback', 'Back flat on the wall')]],
+    'lat-squat': ['Sit into one hip with that whole foot flat and knee in line with the toes; the other leg stays straight.', [pin('kneeL', 'Knee in line with toes'), spine('Chest up')]],
+    'squat-s': ['Knees push out in line with your toes and your chest stays tall.', [pin('kneeL', 'Knees out over toes'), spine('Tall chest')]],
+    legcurl: ['Hips stay down on the pad. Curl all the way, pause, and lower slowly — no jerking.', [pin('hips', 'Hips stay down'), knee('Knee — full curl')]],
+    nordic: ['Body stays straight from knees to head — do not fold at the hips. Lower as slowly as you can.', [line('knees', 'head', 'Straight from knees to head')]],
+    'legcurl-bw': ['Hips stay lifted the whole time; pull your heels in without letting your hips drop.', [line('knees', 'shoulders', 'Hips stay high')]],
+    hipflex: ['Stand tall on the support leg and lift the knee without leaning back.', [spine('Stand tall'), pin('hips', 'No lean-back')]],
+    calf: ['Full range: a deep stretch at the bottom, a one-second pause at the very top. No bouncing.', [pin('heelL', 'Full stretch, full rise'), knee('Knee — stays straight')]],
+    'calf-s': ['Full range: a deep stretch at the bottom, a one-second pause at the very top. No bouncing.', [pin('heelL', 'Full stretch, full rise')]],
+    tib: ['Heels stay planted; pull your toes up as high as possible and lower slowly.', [pin('toeL', 'Toes all the way up')]],
+    plank: C.plank.key, lunge: lunge.key, facepull: C['face-pull'].key, pushdown: C.pushdown.key, lat: C['db-lateral'].key, vpull: pull.key, 'vpull-c': C['lat-pulldown'].key,
+    dpress: press.key, ipress: C['bb-incline'].key, 'hpress-bw': C.pushup.key, 'ipress-bw': C.pushup.key, 'dpress-bw': C.pushup.key, 'hpress-cg': C['close-bench'].key,
+  };
+  for (const e of EX) { if (C[e.id]) continue; const p = PAT[e.pat]; if (!p) continue; if (typeof p === 'string') e.key = p; else { e.key = p[0]; if (p[1]) e.guides = p[1]; } }
   for (const e of EX) { const c = C[e.id]; if (!c) continue; for (const k of ['key', 'setup', 'how', 'cues', 'avoid', 'guides']) if (c[k]) e[k] = c[k]; e.coached = true; }
   return C;
 })();
