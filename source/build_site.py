@@ -4,7 +4,7 @@ t = open('template2.html').read()
 head, body = t.split('</style>', 1)
 head = head + '</style>'
 head = head.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', '')
-js = '\n'.join(open(f).read() for f in ['engine.js','moves.js','data.js','body.js','stage.js','form.js','app2.js'])
+js = '\n'.join(open(f).read() for f in ['engine.js','moves.js','data.js','body.js','stage.js','form.js','coach.js','app2.js'])
 ver = hashlib.sha1(js.encode()).hexdigest()[:8]
 open('site/app.js','w').write(js)
 pre = '''<!doctype html>

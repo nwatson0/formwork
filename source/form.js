@@ -103,7 +103,7 @@ const FORM = (function () {
   };
   function mistakeFor(ex) { const k = MISTAKE_BY_PAT[ex.pat]; return k ? { key: k, ...MISTAKES[k] } : null; }
   function applyMistake(def, m) { return { ...def, frames: def.frames.map((f, i) => m.mod(clone(f), i)) }; }
-  function guidesFor(ex) { return BY_PAT[ex.pat] || BY_PAT[ex.pat.split('-')[0]] || []; }
+  function guidesFor(ex) { if (ex.guides) return ex.guides; return BY_PAT[ex.pat] || BY_PAT[ex.pat.split('-')[0]] || []; }
 
   // ---------- drawing ----------
   const COL = { good: '#34d399', bad: '#ff453a', path: 'rgba(255,255,255,.75)' };

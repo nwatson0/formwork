@@ -340,6 +340,9 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
 .ttl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .ttl-row h3 { font-size: 19px; }
 .ttl-row span { font-size: 12.5px; color: var(--ink-2); }
+.keypt { padding: 14px 16px; border-radius: var(--r); background: linear-gradient(180deg, rgba(48,209,88,.14), rgba(48,209,88,.06)); border: 1px solid rgba(48,209,88,.35); display: grid; gap: 4px; }
+.keypt span { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--green); }
+.keypt p { margin: 0; font-size: 15.5px; line-height: 1.4; font-weight: 500; color: var(--ink); }
 /* summary modal */
 .modal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .modal[hidden] { display: none; }
@@ -459,7 +462,7 @@ ul.cues.bad li::before { background: rgba(255,69,58,.16) url("data:image/svg+xml
 <div class="modal" id="sumModal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sumTitle" id="sumCard"></div></div>
 <div class="toast" id="toast" role="status"></div>
 <script src="three.min.js"></script>
-<script src="app.js?v=d1299f5b"></script>
+<script src="app.js?v=c4e07aef"></script>
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });

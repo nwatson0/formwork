@@ -22,7 +22,7 @@ const matFor = J => { const a = J.headC, b = mid(J.legL.toe, J.legR.toe); let d 
 function lieBench(incline = 0) {
   const p = -(90 - incline), root = [0, .56, 0], u = spine(p), n = front(p), back = mul(n, -1);
   const hip = madd(root, u, -.06);
-  return { p, root, u, n, back, hip, legs: ikLegs([.28, .08, hip[2] + .5], [.2, 1, .6], [.12, 0, 1]) };
+  return { p, root, u, n, back, hip, legs: ikLegs([.3, .08, hip[2] + .42], [.25, 1, .5], [.2, 0, 1]) };
 }
 function benchProps(B, incline) {
   const out = [];
@@ -52,7 +52,7 @@ M.bench = ({ incline = 0, imp = 'bb', grip = .27, close = false, squeeze = false
   // press straight up against gravity whatever the bench angle: 'up' and 'down' expressed in the chest frame
   const a = incline * D2R, sa = Math.sin(a), ca = Math.cos(a), R = .6;
   const yT = -.045 + R * sa - .02, zT = R * ca, yB = -.17 + .085 * Math.max(-.6, Math.min(1, incline / 32));
-  const base = { root: B.root, pel: [B.p, 0, 0], lum: [-4, 0, 0], tho: [-3, 0, 0], neck: incline > 15 ? 8 : 0, ...(incline < -5 ? declineLegs(B) : B.legs) };
+  const base = { root: madd(B.root, B.n, .03), pel: [B.p, 0, 0], lum: [-7, 0, 0], tho: [-7, 0, 0], neck: incline > 15 ? 20 : 16, ...(incline < -5 ? declineLegs(B) : B.legs) };
   const g = close ? .15 : grip;
   let top, bot, props = [() => benchProps(B, incline)];
   if (imp === 'db') {
@@ -225,8 +225,8 @@ M.ohp = ({ imp = 'bb', sit = false } = {}) => {
   const base = sit ? seated({ pel: [-6, 0, 0] }) : stand({ pel: [-2, 0, 0], ...LEGS_STAND(.15) });
   let bot, top, props = [];
   if (imp === 'bb') {
-    bot = { ...base, neck: -12, ...ikArms([.25, .03, .17], [.5, -1, .8]) };
-    top = { ...base, neck: 0, ...ikArms([.25, .62, .03], [1, 0, -.1]) };
+    bot = { ...base, pel: [sit ? -6 : -5, 0, 0], neck: -8, ...ikArms([.24, .0, .1], [.45, -1, .15]) };
+    top = { ...base, pel: [sit ? -6 : -1, 0, 0], neck: 4, ...ikArms([.24, .62, .02], [1, 0, -.1]) };
     props.push(J => PROP.barbell(J));
   } else if (imp === 'db' || imp === 'machine') {
     bot = { ...base, ...ikArms([.31, .02, .07], [1, -1, .1]) };
@@ -364,7 +364,7 @@ M.bentRow = ({ imp = 'bb', tbar = false, pendlay = false } = {}) => {
     const b = { ...base, ...ikArms([.25, sh[1] - .2, sh[2] - .1], [.3, 1, -1], 'w') };
     return { frames: [a, b], props: [J => PROP.barbell(J)], labels: ['Pull explosively to your chest', 'Return the bar to the floor'], t1: .8, t2: 1.2, h2: .5, view: V3(72, 8) };
   }
-  const base = stand({ root: [0, .9, -.15], pel: [50, 0, 0], neck: -26, ...LEGS_STAND(.15, .05) });
+  const base = stand({ root: [0, .88, -.25], pel: [52, 0, 0], neck: -26, ...LEGS_STAND(.15, .05) });
   const J = J0(base), sh = J.shL;
   const gw = tbar ? .06 : imp === 'db' ? .24 : .25;
   const a = { ...base, ...ikArms([gw, sh[1] - .58, sh[2] + .04], [.5, .5, -1], 'w') };
@@ -588,9 +588,9 @@ M.dip = ({ chest = false, machine = false } = {}) => {
 M.squat = ({ imp = 'bb', front: fr = false, smith = false, bw = false, goblet = false, sumo = false, jump = false, box: boxS = false, side = false, pause = false } = {}) => {
   const w = sumo ? .34 : goblet ? .2 : .17, toe = sumo ? .55 : .3;
   const legs = ikLegs([w, .08, smith ? .12 : 0], [sumo ? .7 : .4, 0, 1], [toe, 0, 1]);
-  let lean = fr ? 22 : goblet ? 24 : smith ? 22 : sumo ? 18 : bw ? 34 : 42;
-  const top = stand({ ...legs });
-  let bot = { ...top, root: [0, sumo ? .58 : .54, -(lean / 42) * .24 - (smith ? .02 : 0)], pel: [lean, 0, 0], neck: -14 };
+  let lean = fr ? 16 : goblet ? 24 : smith ? 22 : sumo ? 18 : bw ? 34 : 42;
+  const top = stand({ ...legs, pel: [fr || goblet || sumo || smith ? 0 : 3, 0, 0] });
+  let bot = { ...top, root: [0, sumo ? .58 : fr ? .5 : .52, fr ? -.2 : -(lean / 42) * .24 - (smith ? .02 : 0)], pel: [lean, 0, 0], neck: -14 };
   let arms;
   if (bw || jump) { top.aL = top.aR = { el: 20, az: 20, bend: 30 }; bot.aL = bot.aR = { el: 88, az: 6, bend: 4 }; }
   else if (fr) arms = ikArms([.22, .02, .17], [.15, .25, 1]);
@@ -724,7 +724,7 @@ M.deadlift = ({ imp = 'bb', sumo = false, rdl = false, single = false, rack = fa
   const w = sumo ? .38 : .14, toe = sumo ? .6 : .15;
   const legs = ikLegs([w, .08, -.04], [sumo ? .7 : .25, 0, 1], [toe, 0, 1]);
   const gw = sumo ? .16 : imp === 'trap' ? .28 : .24;
-  const sides = imp === 'trap' ? 0 : .08;
+  const sides = imp === 'trap' ? 0 : .07;
   if (single) {
     const a = stand({ ...symArms({ el: 4, az: 10, bend: 4 }), lL: { t: [.11, .08, 0], pole: [.2, 0, 1], fd: [.1, 0, 1] }, lR: { el: 4, az: 2, bend: 4 } });
     const b = { ...a, root: [0, .9, -.12], pel: [78, 0, 0], neck: -14, lR: { el: 8, az: 2, bend: 6 }, ...symArms({ el: 78, az: 6, bend: 4 }) };
@@ -732,14 +732,14 @@ M.deadlift = ({ imp = 'bb', sumo = false, rdl = false, single = false, rack = fa
   }
   if (rdl) {
     const top = stand({ ...legs, ...ikArms([gw, .82, .1], [.5, 0, -1], 'w') });
-    const bot = { ...top, root: [0, .9, -.24], pel: [70, 0, 0], neck: -20, ...ikArms([gw, .4, .12], [.5, 0, -1], 'w') };
+    const bot = { ...top, root: [0, .9, -.27], pel: [68, 0, 0], neck: -20, ...ikArms([gw, .4, .075], [.5, 0, -1], 'w') };
     if (imp === 'kb') { Object.assign(top, ikArms([.06, .86, .21], [.6, 0, -1], 'w')); Object.assign(bot, ikArms([.06, .44, .2], [.6, 0, -1], 'w')); }
     const props = imp === 'db' ? [J => PROP.dbs(J, 'pn')] : imp === 'kb' ? [J => PROP.kb(J, 'down')] : [J => PROP.barbell(J)];
     return { frames: [top, bot], props, labels: ['Push hips back, bar slides down', 'Squeeze glutes to stand'], t1: 1.8, t2: 1.2, view: V3(72, 6) };
   }
   const y0 = imp === 'trap' ? .24 : .235;
-  const start = { root: [0, sumo ? .58 : .56, sumo ? -.18 : -.3], pel: [sumo ? 36 : 52, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: -18, ...legs, ...ikArms([gw, y0, sides], [.5, 0, -1], 'w') };
-  const midp = { ...start, root: [0, sumo ? .74 : .78, sumo ? -.15 : -.26], pel: [sumo ? 26 : 40, 0, 0], ...ikArms([gw, .52, sides], [.5, 0, -1], 'w') };
+  const start = { root: [0, sumo ? .58 : .69, sumo ? -.18 : -.33], pel: [sumo ? 36 : 70, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: -18, ...legs, ...ikArms([gw, y0, sides], [.5, 0, -1], 'w') };
+  const midp = { ...start, root: [0, sumo ? .74 : .85, sumo ? -.15 : -.28], pel: [sumo ? 26 : 44, 0, 0], ...ikArms([gw, .52, sides], [.5, 0, -1], 'w') };
   const end = { ...start, root: [0, 1, -.03], pel: [0, 0, 0], neck: 0, ...ikArms([gw, .83, sides + .02], [.5, 0, -1], 'w') };
   if (imp === 'trap') { start.root = [0, .58, -.12]; start.pel = [34, 0, 0]; midp.root = [0, .75, -.08]; midp.pel = [22, 0, 0]; }
   const props = imp === 'trap' ? [J => trapBar(J)] : [J => PROP.barbell(J)];

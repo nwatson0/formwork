@@ -143,7 +143,7 @@ const FW3 = (function () {
     if (PROP_MAT[key]) return PROP_MAT[key];
     const S = (c, r, m, extra) => new T.MeshStandardMaterial({ color: c, roughness: r, metalness: m, ...extra });
     const table = {
-      steel: S(0xd2d6dc, 0.22, 1.0), steelD: S(0x6a7079, 0.35, 0.9), iron: S(0x1d1f23, 0.55, 0.15), plate: S(0x16181b, 0.62, 0.05), plate2: S(0x1f2125, 0.6, 0.05),
+      steel: S(0xd2d6dc, 0.22, 1.0), steelD: S(0x6a7079, 0.35, 0.9), iron: S(0x1d1f23, 0.55, 0.15), plate: S(0x3a3f47, 0.5, 0.1, { transparent: true, opacity: 0.34, depthWrite: false }), plate2: S(0x4a505a, 0.5, 0.1, { transparent: true, opacity: 0.4, depthWrite: false }),
       pad: S(0x0c0d0f, 0.6, 0.0, { envMapIntensity: 0.4 }), frame: S(0x22252a, 0.48, 0.6, { envMapIntensity: 0.6 }), cable: S(0x2b2e33, 0.5, 0.3), rope: S(0xb9a77e, 0.85, 0.0), band: S(0x22c46e, 0.55, 0.0),
       strap: S(0xf0b11d, 0.6, 0.0), ball: S(0x3a6fe0, 0.35, 0.0), ball2: S(0x8c5a2b, 0.75, 0.0), mat: S(0x0b0c0e, 0.95, 0.0, { envMapIntensity: 0.2 }), wall: S(0x15171b, 0.95, 0.0, { envMapIntensity: 0.3 }),
       plateStack: S(0x1a1c20, 0.55, 0.4), joint: S(0x888888, 0.5, 0), fig: S(0x888888, 0.5, 0),

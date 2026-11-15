@@ -393,7 +393,9 @@
     $('#detail').innerHTML = `
       <div class="meta-list"><div><span>Type</span><b>${e.comp ? 'Compound — several joints' : 'Isolation — one joint'}</b></div><div><span>Level</span><b>${lvl}</b></div><div><span>Equipment</span><b>${esc(eqText(e))}</b></div></div>
       ${progressChart(e)}${historyFor(e)}
-      <div class="sec"><h3>How to do it</h3><ol class="steps">${e.how.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>
+      ${e.key ? `<div class="keypt"><span>The one thing</span><p>${esc(e.key)}</p></div>` : ''}
+      ${e.setup ? `<div class="sec"><h3>Set up</h3><ol class="steps">${e.setup.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>` : ''}
+      <div class="sec"><h3>${e.setup ? 'The movement' : 'How to do it'}</h3><ol class="steps">${e.how.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>
       <div class="sec"><h3>Form cues</h3><ul class="cues">${e.cues.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ul></div>
       <div class="sec"><h3>Avoid</h3><ul class="cues bad">${e.avoid.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ul></div>
       ${alts.length ? '<div class="sec"><h3>Swap options with your gear</h3><div class="alts" id="altList"></div></div>' : ''}`;

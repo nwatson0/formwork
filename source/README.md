@@ -8,6 +8,7 @@ The files one level up are the finished, installable app. This folder is what bu
 | `moves.js` | The movement library: one function per movement pattern, shared by many exercises |
 | `data.js` | Muscles, equipment and the exercise list (names, muscles, instructions) |
 | `form.js` | On-figure form guides and "common mistake" demonstrations |
+| `coach.js` | Researched, lift-specific coaching notes and callouts (with sources) |
 | `stage.js` | 3D rendering of the mannequin and equipment (three.js) |
 | `app2.js` | The app itself: workout builder, logging, progress, library, gear |
 | `template2.html` | Page layout and styles |

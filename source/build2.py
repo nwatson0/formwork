@@ -1,7 +1,7 @@
 import os, sys
 os.makedirs('dist', exist_ok=True)
 t=open('template2.html').read()
-js='\n'.join(open(f).read() for f in ['engine.js','moves.js','data.js','body.js','stage.js','form.js','app2.js'])
+js='\n'.join(open(f).read() for f in ['engine.js','moves.js','data.js','body.js','stage.js','form.js','coach.js','app2.js'])
 cdn='<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>\n'
 out=t.replace('<!--SCRIPTS-->', cdn+'<script>\n'+js+'\n</script>')
 open('dist/formwork-trainer.html','w').write(out)
