@@ -1,0 +1,55 @@
+<!doctype html><meta charset="utf-8"><body>
+<script src="../node_modules/three/build/three.min.js"></script>
+<script src="../engine.js"></script><script src="../moves.js"></script><script src="../data.js"></script><script src="../body.js"></script><script src="../stage.js"></script>
+<script>
+// Clipping audit: skin a subsample of body vertices for sampled frames of every exercise and measure penetration into props / floor.
+(function () {
+  const q = new URLSearchParams(location.search), T = FW3.T, M = BODY_MESH, n = M.n;
+  const b64 = (s, C) => { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new C(u.buffer); };
+  const P16 = b64(M.pos, Uint16Array), SI = b64(M.si, Uint8Array), SW = b64(M.sw, Uint8Array);
+  const STEP = +(q.get('step') || 5), V = [];
+  for (let i = 0; i < n; i += STEP) { const p = [0, 1, 2].map(k => M.mn[k] + P16[i * 3 + k] / 65535 * (M.mx[k] - M.mn[k])); let dom = 0, dw = 0; const bw = []; for (let k = 0; k < 4; k++) { const w = SW[i * 4 + k] / 255; if (w > 0) bw.push([SI[i * 4 + k], w]); if (w > dw) { dw = w; dom = SI[i * 4 + k]; } } V.push({ p: new T.Vector3(...p), bw, dom }); }
+  const inv = FW3.bindInverses(), HAND = new Set([M.bones.indexOf('handL'), M.bones.indexOf('handR')]), FARM = new Set(['farmL', 'farmR', 'farmTwL', 'farmTwR'].map(b => M.bones.indexOf(b)));
+  const tmp = new T.Vector3(), acc = new T.Vector3(), mats = M.bones.map(() => new T.Matrix4());
+  const TOL = { pad: .03, mat: 9, wall: .02, band: 9, cable: 9, rope: 9, strap: 9 };
+  function depthIn(pr, p) { // penetration depth of point p inside prim (<=0 outside)
+    if (pr.k === 'cap' || pr.k === 'line') { const r = pr.k === 'line' ? .004 : pr.r, ab = sub(pr.b, pr.a), l2 = dot(ab, ab) || 1e-9, t = Math.max(0, Math.min(1, dot(sub(p, pr.a), ab) / l2)); return r - vlen(sub(p, madd(pr.a, ab, t))); }
+    if (pr.k === 'sph') return pr.r - vlen(sub(p, pr.p));
+    if (pr.k === 'disc') { const d = sub(p, pr.p), ax = dot(d, pr.n), th = (pr.th || .02) / 2, rad = vlen(sub(d, mul(pr.n, ax))); return Math.min(th - Math.abs(ax), pr.r - rad); }
+    if (pr.k === 'box') { const d = sub(p, pr.p); let m = 9; for (let i = 0; i < 3; i++) m = Math.min(m, pr.h[i] - Math.abs(dot(d, norm(pr.ax[i])))); return m; }
+    return -1;
+  }
+  const res = [], list = q.get('ids') ? EX.filter(e => q.get('ids').split(',').includes(e.id)) : EX, NS = +(q.get('n') || 9);
+  for (const ex of list) {
+    let worst = { d: 0 }, cnt = 0, floor = 0, self = 0, fb = '';
+    try {
+      const A = new Anim(ex.anim());
+      for (let s = 0; s < NS; s++) {
+        const { pose } = A.poseAt(A.total * s / NS), J = solvePose(pose), prims = A.propPrims(J, pose).filter(p => !(TOL[p.c] > 1));
+        FW3.boneFrames(J, mats).forEach((m, i) => m.multiply(inv[i]));
+        const gL = J.armL.grip, gR = J.armR.grip;
+        for (const v of V) {
+          acc.set(0, 0, 0); for (const [b, w] of v.bw) { tmp.copy(v.p).applyMatrix4(mats[b]); acc.addScaledVector(tmp, w); }
+          const p = [acc.x, acc.y, acc.z];
+          if (p[1] < -.03 && -p[1] > floor) { floor = -p[1]; fb = M.bones[v.dom] + '@' + s; }
+          if (HAND.has(v.dom)) continue;
+          const nearGrip = FARM.has(v.dom) && Math.min(vlen(sub(p, gL)), vlen(sub(p, gR))) < .13;
+          for (const pr of prims) {
+            const d = depthIn(pr, p) - (TOL[pr.c] || .018); if (d <= 0) continue;
+            if (nearGrip) continue;
+            cnt++; if (d > worst.d) worst = { d, c: pr.c, k: pr.k, bone: M.bones[v.dom], s };
+          }
+        }
+        // hands inside the head or trunk
+        for (const A2 of [J.armL, J.armR]) for (const pt of [A2.grip, A2.wrist]) {
+          const dh = .1 - vlen(sub(pt, J.headC)); if (dh > .02) self = Math.max(self, dh);
+          const l = toLocal(J.T, sub(pt, J.neckB)); const dt = Math.min(.15 - Math.abs(l[0]), -l[1] - .02, l[1] + .48, .1 - l[2], l[2] + .07); if (dt > .02) self = Math.max(self, dt);
+        }
+      }
+    } catch (err) { res.push({ id: ex.id, err: String(err) }); continue; }
+    if (worst.d > 0 || floor > .03 || self > 0) res.push({ id: ex.id, depth: +(worst.d * 100).toFixed(1), n: cnt, into: worst.c, bone: worst.bone, at: worst.s, floor: +(floor * 100).toFixed(1), fb, self: +(self * 100).toFixed(1) });
+  }
+  res.sort((a, b) => (b.depth + b.floor + b.self || 99) - (a.depth + a.floor + a.self || 99));
+  window.__clip = res; document.title = 'done';
+})();
+</script>

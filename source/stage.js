@@ -313,5 +313,5 @@ const FW3 = (function () {
     render(time = 0) { this.bodyMat.userData.u.uTime.value = time; this.renderer.render(this.scene, this.camera); }
     project(p, w, h) { const v = new T.Vector3(p[0], p[1], p[2]).project(this.camera); return [(v.x + 1) / 2 * w, (1 - v.y) / 2 * h, v.z]; }
   }
-  return { Stage, bodyGeometry, MUSCLE_INDEX, T };
+  return { Stage, bodyGeometry, MUSCLE_INDEX, T, boneFrames, bindInverses };
 })();

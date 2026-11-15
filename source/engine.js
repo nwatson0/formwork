@@ -34,7 +34,7 @@ function limbAngles(spec, F, base, s, kind) {
   const dl = [s * Math.sin(el) * Math.sin(az), -Math.cos(el), Math.sin(el) * Math.cos(az)];
   let bl = kind === 'arm' ? [0, 0, 1] : [0, 0, -1];
   const A = cross([0, -1, 0], dl);
-  if (vlen(A) > 1e-6) bl = rotAxis(bl, norm(A), el);
+  if (vlen(A) > 1e-6) bl = rotAxis(bl, norm(A), Math.abs(el));
   else if (el > 1) bl = mul(bl, -1);
   if (rot) bl = rotAxis(bl, dl, s * rot);
   const d = norm(dirW(F, dl)), b = norm(dirW(F, bl));
@@ -96,18 +96,23 @@ function finishHand(A, s, g, C, other, spec) {
   return A;
 }
 function finishLeg(G, spec, pel) {
-  let fd;
+  let fd, fuX = null;
   if (spec.fd) fd = norm(spec.fd);
   else if (spec.t) {
     let h = [pel.z[0], 0, pel.z[2]];
     fd = vlen(h) > .2 ? norm(h) : [0, 0, 1];
   } else {
-    fd = norm(add(mul(G.b, -Math.cos(G.th)), mul(G.d, Math.sin(G.th))));
-    const ank = (spec.ank ?? 0) * D2R;
-    if (ank) fd = norm(add(mul(fd, Math.cos(ank)), mul(G.c, Math.sin(ank))));
+    // foot at a right angle to the shin, then pointed (plantarflexed) by 'ank' degrees
+    const f0 = norm(add(mul(G.b, -Math.cos(G.th)), mul(G.d, Math.sin(G.th))));
+    const at = a => ({ fd: norm(add(mul(f0, Math.cos(a)), mul(G.c, Math.sin(a)))), fu: norm(sub(mul(f0, Math.sin(a)), mul(G.c, Math.cos(a)))) });
+    let a = (spec.ank ?? 0) * D2R, F = at(a);
+    const low = F => Math.min(G.end[1] + F.fd[1] * .135 - F.fu[1] * .058 - .022, G.end[1] + F.fd[1] * .2 - F.fu[1] * .03 - .012);
+    if (spec.ank == null && G.end[1] < .25 && Math.abs(G.c[1]) < .6) // kneeling / lying: point the foot so the toes rest on the floor instead of digging in
+      for (let d = 5; d <= 85 && low(F) < 0; d += 5) F = at(d * D2R);
+    fd = F.fd; fuX = F.fu;
   }
   const up = mul(G.c, -1);
-  let fu = sub(up, mul(fd, dot(up, fd)));
+  let fu = fuX || sub(up, mul(fd, dot(up, fd)));
   fu = vlen(fu) < 1e-4 ? [0, 1, 0] : norm(fu);
   G.ankle = G.end; G.fd = fd; G.fu = fu;
   G.pf = sub(mul(G.b, Math.cos(G.th)), mul(G.d, Math.sin(G.th)));
@@ -266,7 +271,7 @@ const PROP = {
     return segCap(madd(c, ax, -half), madd(c, ax, half), .016, 'steel', 3);
   },
   db(A, axis, o = {}) {
-    const hl = o.half ?? .16, r = o.r ?? .075;
+    const hl = o.half ?? .135, r = o.r ?? .066;
     const out = [cap(madd(A.grip, axis, -hl), madd(A.grip, axis, hl), .017, 'steel')];
     for (const s of [1, -1]) out.push(disc(madd(A.grip, axis, s * (hl - .03)), axis, r, 'iron', { th: .06 }));
     return out;
@@ -445,7 +450,8 @@ function drawBox(ctx, P, b, cam, col, outline) {
 class Anim {
   constructor(def) {
     if (def.hands == null) def.hands = def.grip != null ? 1 : .35;
-    this.def = def; this.frames = def.frames.map(f => { const o = { ...f }; if (def.grip != null && o.grip == null) o.grip = def.grip; if (def.hands != null && o.hands == null) o.hands = def.hands; return o; });
+    const nz = sp => { if (!sp || sp.t || sp.az == null || Math.abs(sp.el || 0) >= 90) return sp; if (sp.az > 90) return { ...sp, el: -(sp.el || 0), az: sp.az - 180 }; if (sp.az < -90) return { ...sp, el: -(sp.el || 0), az: sp.az + 180 }; return sp; };
+    this.def = def; this.frames = def.frames.map(f => { f = { ...f, aL: nz(f.aL), aR: nz(f.aR), lL: nz(f.lL), lR: nz(f.lR) }; for (const k of ['aL', 'aR', 'lL', 'lR']) if (f[k] === undefined) delete f[k]; const o = { ...f }; if (def.grip != null && o.grip == null) o.grip = def.grip; if (def.hands != null && o.hands == null) o.hands = def.hands; return o; });
     const n = this.frames.length;
     this.seq = def.seq || (n === 1 ? [{ to: 0, dur: 2, label: def.labels?.[0] || 'Hold' }] :
       n === 2 ? [{ to: 1, dur: def.t1 ?? 1.4, label: def.labels?.[0] }, { hold: def.h1 ?? .35 }, { to: 0, dur: def.t2 ?? 1.6, label: def.labels?.[1] }, { hold: def.h2 ?? .45 }] :

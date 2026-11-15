@@ -34,7 +34,7 @@ function limbAngles(spec, F, base, s, kind) {
   const dl = [s * Math.sin(el) * Math.sin(az), -Math.cos(el), Math.sin(el) * Math.cos(az)];
   let bl = kind === 'arm' ? [0, 0, 1] : [0, 0, -1];
   const A = cross([0, -1, 0], dl);
-  if (vlen(A) > 1e-6) bl = rotAxis(bl, norm(A), el);
+  if (vlen(A) > 1e-6) bl = rotAxis(bl, norm(A), Math.abs(el));
   else if (el > 1) bl = mul(bl, -1);
   if (rot) bl = rotAxis(bl, dl, s * rot);
   const d = norm(dirW(F, dl)), b = norm(dirW(F, bl));
@@ -96,18 +96,23 @@ function finishHand(A, s, g, C, other, spec) {
   return A;
 }
 function finishLeg(G, spec, pel) {
-  let fd;
+  let fd, fuX = null;
   if (spec.fd) fd = norm(spec.fd);
   else if (spec.t) {
     let h = [pel.z[0], 0, pel.z[2]];
     fd = vlen(h) > .2 ? norm(h) : [0, 0, 1];
   } else {
-    fd = norm(add(mul(G.b, -Math.cos(G.th)), mul(G.d, Math.sin(G.th))));
-    const ank = (spec.ank ?? 0) * D2R;
-    if (ank) fd = norm(add(mul(fd, Math.cos(ank)), mul(G.c, Math.sin(ank))));
+    // foot at a right angle to the shin, then pointed (plantarflexed) by 'ank' degrees
+    const f0 = norm(add(mul(G.b, -Math.cos(G.th)), mul(G.d, Math.sin(G.th))));
+    const at = a => ({ fd: norm(add(mul(f0, Math.cos(a)), mul(G.c, Math.sin(a)))), fu: norm(sub(mul(f0, Math.sin(a)), mul(G.c, Math.cos(a)))) });
+    let a = (spec.ank ?? 0) * D2R, F = at(a);
+    const low = F => Math.min(G.end[1] + F.fd[1] * .135 - F.fu[1] * .058 - .022, G.end[1] + F.fd[1] * .2 - F.fu[1] * .03 - .012);
+    if (spec.ank == null && G.end[1] < .25 && Math.abs(G.c[1]) < .6) // kneeling / lying: point the foot so the toes rest on the floor instead of digging in
+      for (let d = 5; d <= 85 && low(F) < 0; d += 5) F = at(d * D2R);
+    fd = F.fd; fuX = F.fu;
   }
   const up = mul(G.c, -1);
-  let fu = sub(up, mul(fd, dot(up, fd)));
+  let fu = fuX || sub(up, mul(fd, dot(up, fd)));
   fu = vlen(fu) < 1e-4 ? [0, 1, 0] : norm(fu);
   G.ankle = G.end; G.fd = fd; G.fu = fu;
   G.pf = sub(mul(G.b, Math.cos(G.th)), mul(G.d, Math.sin(G.th)));
@@ -266,7 +271,7 @@ const PROP = {
     return segCap(madd(c, ax, -half), madd(c, ax, half), .016, 'steel', 3);
   },
   db(A, axis, o = {}) {
-    const hl = o.half ?? .16, r = o.r ?? .075;
+    const hl = o.half ?? .135, r = o.r ?? .066;
     const out = [cap(madd(A.grip, axis, -hl), madd(A.grip, axis, hl), .017, 'steel')];
     for (const s of [1, -1]) out.push(disc(madd(A.grip, axis, s * (hl - .03)), axis, r, 'iron', { th: .06 }));
     return out;
@@ -445,7 +450,8 @@ function drawBox(ctx, P, b, cam, col, outline) {
 class Anim {
   constructor(def) {
     if (def.hands == null) def.hands = def.grip != null ? 1 : .35;
-    this.def = def; this.frames = def.frames.map(f => { const o = { ...f }; if (def.grip != null && o.grip == null) o.grip = def.grip; if (def.hands != null && o.hands == null) o.hands = def.hands; return o; });
+    const nz = sp => { if (!sp || sp.t || sp.az == null || Math.abs(sp.el || 0) >= 90) return sp; if (sp.az > 90) return { ...sp, el: -(sp.el || 0), az: sp.az - 180 }; if (sp.az < -90) return { ...sp, el: -(sp.el || 0), az: sp.az + 180 }; return sp; };
+    this.def = def; this.frames = def.frames.map(f => { f = { ...f, aL: nz(f.aL), aR: nz(f.aR), lL: nz(f.lL), lR: nz(f.lR) }; for (const k of ['aL', 'aR', 'lL', 'lR']) if (f[k] === undefined) delete f[k]; const o = { ...f }; if (def.grip != null && o.grip == null) o.grip = def.grip; if (def.hands != null && o.hands == null) o.hands = def.hands; return o; });
     const n = this.frames.length;
     this.seq = def.seq || (n === 1 ? [{ to: 0, dur: 2, label: def.labels?.[0] || 'Hold' }] :
       n === 2 ? [{ to: 1, dur: def.t1 ?? 1.4, label: def.labels?.[0] }, { hold: def.h1 ?? .35 }, { to: 0, dur: def.t2 ?? 1.6, label: def.labels?.[1] }, { hold: def.h2 ?? .45 }] :
@@ -556,17 +562,20 @@ function declineLegs(B) {
 const M = {};
 M.bench = ({ incline = 0, imp = 'bb', grip = .27, close = false, squeeze = false } = {}) => {
   const B = lieBench(incline);
-  const yT = incline > 15 ? -.02 : incline < -5 ? -.17 : -.1, yB = incline > 15 ? -.08 : incline < -5 ? -.23 : -.16;
+  // press straight up against gravity whatever the bench angle: 'up' and 'down' expressed in the chest frame
+  const a = incline * D2R, sa = Math.sin(a), ca = Math.cos(a), R = .6;
+  const yT = -.045 + R * sa - .02, zT = R * ca, yB = -.17 + .085 * Math.max(-.6, Math.min(1, incline / 32));
   const base = { root: B.root, pel: [B.p, 0, 0], lum: [-4, 0, 0], tho: [-3, 0, 0], neck: incline > 15 ? 8 : 0, ...(incline < -5 ? declineLegs(B) : B.legs) };
   const g = close ? .15 : grip;
   let top, bot, props = [() => benchProps(B, incline)];
   if (imp === 'db') {
-    top = { ...base, ...ikArms([squeeze ? .075 : .15, yT, .52], [1, -.3, -.3]) };
-    bot = { ...base, ...ikArms([squeeze ? .075 : .31, yB + .02, .12], squeeze ? [.6, -1, -.4] : [1, -.6, -.7]) };
+    // dumbbells finish over the shoulders (not touching), and come down beside the chest with forearms vertical
+    top = { ...base, ...ikArms([squeeze ? .075 : .18, yT, zT], [1, -sa - .3, -ca]) };
+    bot = { ...base, ...ikArms([squeeze ? .075 : .35, yB + .03, squeeze ? .23 : .13], squeeze ? [.5, -sa - .8, -ca] : [.75, -sa - .35, -ca]) };
     props.push(J => PROP.dbs(J, [1, 0, 0]));
   } else {
-    top = { ...base, ...ikArms([g, yT, .52], close ? [.4, -1, -.5] : [1, -.5, -.4]) };
-    bot = { ...base, ...ikArms([g, yB, .16], close ? [.35, -1, -.6] : [1, -.75, -.6]) };
+    top = { ...base, ...ikArms([g, yT, zT], close ? [.3, -sa - .6, -ca] : [.8, -sa - .45, -ca]) };
+    bot = { ...base, ...ikArms([g, yB, .195], close ? [.3, -sa - .6, -ca] : [.8, -sa - .45, -ca]) };
     if (imp === 'smith') props.push(J => PROP.smithBar(J), () => { const z = J0(top).armL.grip[2]; return [...segCap([.7, 0, z], [.7, 1.9, z], .025, 'frame', 4), ...segCap([-.7, 0, z], [-.7, 1.9, z], .025, 'frame', 4)]; });
     else if (imp === 'machine') props.push(J => machineHandles(J, [0, 1, 0]));
     else props.push(J => PROP.barbell(J));
@@ -597,15 +606,16 @@ M.machinePress = () => {
   return { frames: [bot, top], props: [() => S(seatBox(), uprightBack(-8)), J => machineHandles(J, [0, 1, 0]), J => [cap(J.armL.grip, [.42, J.armL.grip[1], -.1], .02, 'frame'), cap(J.armR.grip, [-.42, J.armR.grip[1], -.1], .02, 'frame')]], labels: ['Press forward', 'Return slowly'], t1: 1, t2: 1.8, view: V3(60, 10) };
 };
 M.landminePress = ({ single = false } = {}) => {
-  const base = stand({ ...ikLegs([.14, .08, -.1], [.3, 0, 1], [.15, 0, 1]), pel: [8, 0, 0], tho: [4, 0, 0] });
-  const bot = { ...base, ...ikArms([.05, -.05, .2], [.4, -1, .6]) };
-  const top = { ...base, ...ikArms([.04, .3, .58], [.5, -.6, .3]) };
-  const pivot = [0, .04, -1.15];
-  return { frames: [bot, top], props: [J => landmine(J, pivot)], labels: ['Press up and forward', 'Lower to shoulder'], t1: 1, t2: 1.7, view: V3(70, 10) };
+  // the bar pivots on the floor in front of the lifter and is pressed up and away in an arc
+  const pivot = [0, .04, 1.65];
+  const base = stand({ ...ikLegs([.15, .08, 0], [.3, 0, 1], [.15, 0, 1]), pel: [8, 0, 0], tho: [2, 0, 0] });
+  const bot = { ...base, ...ikArms([.04, 1.36, .2], [.7, -1, -.1], 'w') };
+  const top = { ...base, pel: [13, 0, 0], ...ikArms([.04, 1.72, .64], [.6, -.8, .2], 'w') };
+  return { frames: [bot, top], props: [J => landmine(J, pivot)], labels: ['Press up and forward', 'Lower to your upper chest'], t1: 1, t2: 1.7, view: V3(62, 8) };
 };
 function landmine(J, pivot) {
-  const g = mid(J.armL.grip, J.armR.grip); const dir = norm(sub(g, pivot)); const end = madd(g, dir, .2);
-  return [...segCap(pivot, end, .018, 'steel', 4), disc(madd(g, dir, .14), dir, .2, 'plate', { th: .045 }), cap(add(pivot, [-.1, -.03, 0]), add(pivot, [.1, -.03, 0]), .03, 'frame')];
+  const g = mid(J.armL.grip, J.armR.grip); const dir = norm(sub(g, pivot)); const end = madd(g, dir, .07);
+  return [...segCap(pivot, end, .022, 'steel', 4), disc(madd(g, dir, -.2), dir, .16, 'plate', { th: .045 }), cap(add(pivot, [-.1, -.03, 0]), add(pivot, [.1, -.03, 0]), .03, 'frame')];
 }
 M.svend = () => {
   const base = stand();
@@ -871,7 +881,7 @@ M.bentRow = ({ imp = 'bb', tbar = false, pendlay = false } = {}) => {
   const J = J0(base), sh = J.shL;
   const gw = tbar ? .06 : imp === 'db' ? .24 : .25;
   const a = { ...base, ...ikArms([gw, sh[1] - .58, sh[2] + .04], [.5, .5, -1], 'w') };
-  const b = { ...base, ...ikArms([gw, sh[1] - .27, sh[2] - .12], [.3, 1, -1], 'w') };
+  const b = { ...base, ...ikArms(tbar ? [gw, sh[1] - .36, sh[2] - .02] : [gw, sh[1] - .27, sh[2] - .12], [.3, 1, -1], 'w') };
   let props = [J => PROP.barbell(J)];
   if (imp === 'db') props = [J => PROP.dbs(J, 'pf')];
   if (tbar) props = [J => landmine(J, [0, .04, -1.15])];
@@ -955,7 +965,7 @@ function trapBar(J) {
 }
 M.farmer = ({ imp = 'db', only = null } = {}) => {
   const step = (s) => ({ lL: { el: s > 0 ? 22 : 12, az: s > 0 ? 2 : 178, bend: s > 0 ? 18 : 28 }, lR: { el: s > 0 ? 12 : 22, az: s > 0 ? 178 : 2, bend: s > 0 ? 28 : 18 } });
-  const arms = symArms({ el: 4, az: 14, bend: 4 });
+  const arms = symArms(imp === 'kb' ? { el: 11, az: 86, bend: 5 } : { el: 4, az: 14, bend: 4 });
   const a = { root: [0, .97, 0], pel: [2, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 0, ...arms, ...step(1), snap: true };
   const b = { ...a, ...step(-1) };
   const props = imp === 'kb' ? [J => [...PROP.kb(J, 'down', 'L'), ...PROP.kb(J, 'down', 'R')]] : imp === 'trap' ? [J => trapBar(J)] : [J => PROP.dbs(J, 'pf', 'c', only ? { only } : undefined)];
@@ -1159,10 +1169,11 @@ M.legCurl = ({ seat = false, ball = false, sliders = false } = {}) => {
       const r = [0, hipY, ank[2] - .5];
       const v = sub(sh, r); const p = Math.atan2(v[2], v[1]) / D2R; // spine dir from pelvis to shoulders
       const rr = madd(sh, norm(v), -.455);
-      return { root: rr, pel: [p, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 18, ...ikLegs([.09, ank[1], ank[2]], [.1, 1, .2], [0, .9, .2]), ...floorArms(.28) };
+      return { root: rr, pel: [p, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 18, ...ikLegs([.09, ank[1], ank[2]], [.1, 1, .2], [0, .9, .2]), ...floorArms(sh[2]) };
     };
-    const a = pose([0, ball ? .55 : .08, 1.0], ball ? .5 : .38), b = pose([0, ball ? .45 : .08, .55], .55);
-    const props = ball ? [J => [sph([0, .33, mid(J.legL.ankle, J.legR.ankle)[2] + .1], .33, 'ball')]] : [J => [disc([J.legL.heel[0], .006, J.legL.heel[2]], [0, 1, 0], .08, 'ball2', { th: .01 }), disc([J.legR.heel[0], .006, J.legR.heel[2]], [0, 1, 0], .08, 'ball2', { th: .01 })]];
+    const a = pose([0, ball ? .66 : .08, 1.0], ball ? .46 : .38), b = pose([0, ball ? .66 : .08, .6], ball ? .62 : .55);
+    for (const f of [a, b]) f.neck = -(90 + f.pel[0]) - 2;
+    const props = ball ? [J => [sph([0, .28, mid(J.legL.heel, J.legR.heel)[2] + .02], .28, 'ball')]] : [J => [disc([J.legL.heel[0], .006, J.legL.heel[2]], [0, 1, 0], .08, 'ball2', { th: .01 }), disc([J.legR.heel[0], .006, J.legR.heel[2]], [0, 1, 0], .08, 'ball2', { th: .01 })]];
     props.unshift(floorMat());
     return { frames: [a, b], props, labels: ['Curl heels in, hips high', 'Extend slowly'], t1: 1.1, t2: 1.6, view: V3(70, 10) };
   }
@@ -1200,9 +1211,10 @@ M.lunge = ({ type = 'fwd', imp = 'db' } = {}) => {
 };
 M.stepUp = () => {
   const arms = symArms({ el: 4, az: 14, bend: 6 });
-  const a = stand({ ...arms, root: [0, .98, -.02], pel: [10, 0, 0], lL: { t: [.13, .55, .32], pole: [.2, 0, 1], fd: [.1, 0, 1] }, lR: { t: [-.13, .08, -.1], pole: [-.2, 0, 1], fd: [-.1, 0, 1] } });
-  const b = { ...a, root: [0, 1.42, .3], pel: [2, 0, 0], lR: { t: [-.13, .62, .2], pole: [-.2, 0, 1], fd: [-.1, -.3, 1] } };
-  return { frames: [a, b], props: [() => S(box([0, .235, .36], AX, [.3, .235, .22], 'pad')), J => PROP.dbs(J, 'pf')], labels: ['Drive up through top foot', 'Step down slowly'], t1: 1.2, t2: 1.5, view: V3(70, 6) };
+  const a = stand({ ...arms, root: [0, .98, -.02], pel: [10, 0, 0], lL: { t: [.13, .55, .34], pole: [.2, 0, 1], fd: [.1, 0, 1] }, lR: { t: [-.13, .08, -.1], pole: [-.2, 0, 1], fd: [-.1, 0, 1] } });
+  const m = { ...a, root: [0, 1.3, .2], pel: [8, 0, 0], lR: { t: [-.13, .6, -.04], pole: [-.2, 0, 1], fd: [-.1, -.25, 1] } };
+  const b = { ...a, root: [0, 1.45, .32], pel: [2, 0, 0], lR: { t: [-.13, .55, .3], pole: [-.2, 0, 1], fd: [-.1, 0, 1] } };
+  return { frames: [a, m, b, m], props: [() => S(box([0, .235, .4], AX, [.3, .235, .22], 'pad')), J => PROP.dbs(J, 'pf')], labels: ['Drive up through the top foot', 'Bring the trailing foot onto the box', 'Step back down slowly', 'Lower under control'], durs: [.9, .6, .6, 1.1], view: V3(70, 6) };
 };
 M.wallSit = () => {
   const a = { root: [0, .5, -.02], pel: [-2, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 0, ...ikLegs([.15, .08, .46], [.3, 0, 1], [.15, 0, 1]), ...symArms({ el: 8, az: 30, bend: 70 }) };
@@ -1234,6 +1246,7 @@ M.deadlift = ({ imp = 'bb', sumo = false, rdl = false, single = false, rack = fa
   if (rdl) {
     const top = stand({ ...legs, ...ikArms([gw, .82, .1], [.5, 0, -1], 'w') });
     const bot = { ...top, root: [0, .9, -.24], pel: [70, 0, 0], neck: -20, ...ikArms([gw, .4, .12], [.5, 0, -1], 'w') };
+    if (imp === 'kb') { Object.assign(top, ikArms([.06, .86, .21], [.6, 0, -1], 'w')); Object.assign(bot, ikArms([.06, .44, .2], [.6, 0, -1], 'w')); }
     const props = imp === 'db' ? [J => PROP.dbs(J, 'pn')] : imp === 'kb' ? [J => PROP.kb(J, 'down')] : [J => PROP.barbell(J)];
     return { frames: [top, bot], props, labels: ['Push hips back, bar slides down', 'Squeeze glutes to stand'], t1: 1.8, t2: 1.2, view: V3(72, 6) };
   }
@@ -1272,10 +1285,12 @@ M.birdDog = () => {
   const J = J0(base);
   const hand = s => ({ t: [s * .18, .035, (s > 0 ? J.shL : J.shR)[2] + .02], pole: [s * .2, .4, -1], f: 'w' });
   const a = { ...base, aL: hand(1), aR: hand(-1) };
-  const b = { ...a, aL: { el: 168, az: 6, bend: 2 }, lR: { el: 6, az: 176, bend: 2 } };
-  const c = { ...a, aR: { el: 168, az: 6, bend: 2 }, lL: { el: 6, az: 176, bend: 2 } };
+  const reach = s => ({ t: [s * .2, (s > 0 ? J.shL : J.shR)[1] + .03, (s > 0 ? J.shL : J.shR)[2] + .53], pole: [s * .3, -1, 0], f: 'w', flat: true, hd: [0, 0, 1], hn: [0, -1, 0] });
+  const kick = { el: -(90 - P) - 2, az: 2, bend: 3 };
+  const b = { ...a, aL: reach(1), lR: kick };
+  const c = { ...a, aR: reach(-1), lL: kick };
   // keep the supporting knee anchored
-  b.anchor = { j: 'kneeL', at: [.1, .05, J.legL.j1[2]] }; c.anchor = { j: 'kneeR', at: [-.1, .05, J.legR.j1[2]] }; a.anchor = { j: 'kneeR', at: [-.1, .05, J.legR.j1[2]] };
+  for (const f of [a, b, c]) { f.root = J.root; delete f.anchor; }   // hips stay perfectly still: that is the whole point of the exercise
   return { frames: [a, b, a, c], props: [floorMat()], labels: ['Reach left arm, right leg', 'Return', 'Reach right arm, left leg', 'Return'], durs: [1.2, 1, 1.2, 1], view: V3(55, 18) };
 };
 M.kbSwing = ({ cable = false } = {}) => {
@@ -1308,7 +1323,8 @@ M.hipThrust = ({ floor = false, single = false, imp = 'bb' } = {}) => {
     return { root, pel: [p, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: floor ? 10 : 22, ...ikLegs(feet, [.3, 1, .4], [.15, 0, 1]) };
   };
   const bot = mk(floor ? .14 : .27), top = mk(floor ? .44 : .52);
-  let arms = imp === 'bb' ? ikArms([.3, .02, .16], [.4, 1, .4], 'p') : floor ? floorArms(.1) : symArms({ el: 28, az: 34, bend: 4 });
+  if (floor) { bot.neck = -2; top.neck = -(90 + top.pel[0]) - 2; }
+  let arms = imp === 'bb' ? ikArms([.3, .02, .16], [.4, 1, .4], 'p') : floor ? floorArms(sh[2]) : symArms({ el: 28, az: 34, bend: 4 });
   if (imp === 'db') arms = ikArms([.08, .02, .16], [.5, 1, .2], 'p');
   Object.assign(bot, arms); Object.assign(top, arms);
   if (single) { bot.lR = { el: 50, az: 2, bend: 6 }; top.lR = { el: 2, az: 2, bend: 6 }; }
@@ -1328,7 +1344,7 @@ M.gluteKick = ({ quad = false } = {}) => {
     const J = J0(base);
     const hand = s => ({ t: [s * .18, .035, (s > 0 ? J.shL : J.shR)[2] + .02], pole: [s * .2, .4, -1], f: 'w' });
     const a = { ...base, aL: hand(1), aR: hand(-1) };
-    const b = { ...a, lL: { el: 12, az: 178, bend: 90 } };
+    const b = { ...a, lL: { el: -14, az: 2, bend: 90 } };
     return { frames: [a, b], props: [floorMat()], labels: ['Press heel to ceiling', 'Lower knee'], hl: 'L', t1: 1, t2: 1.3, h1: .5, view: V3(80, 10) };
   }
   const base = stand({ root: [0, 1, 0], pel: [14, 0, 0], lR: { t: [-.12, .08, .02], pole: [-.2, 0, 1], fd: [-.1, 0, 1] }, ...ikArms([.2, 1.15, .45], [1, -.3, 0], 'w') });
@@ -1411,12 +1427,12 @@ M.tibRaise = () => {
   const base = { root: [0, .96, -.24], pel: [-10, 0, 0], lum: [0, 0, 0], tho: [-4, 0, 0], neck: 4, ...symArms({ el: 5, az: 14, bend: 6 }) };
   const a = { ...base, ...ikLegs([.12, .08, .3], [.2, 0, 1], [.1, 0, 1]) };
   const b = { ...base, ...ikLegs([.12, .08, .3], [.2, 0, 1], [.1, .62, .8]) };
-  return { frames: [a, b], props: [() => S(box([0, 1.1, -.44], AX, [.7, 1.1, .05], 'wall', { bias: -2 }))], labels: ['Pull toes up hard', 'Lower slowly'], t1: .8, t2: 1.2, h1: .3, view: V3(75, 6) };
+  return { frames: [a, b], props: [() => S(box([0, 1.1, -.485], AX, [.7, 1.1, .05], 'wall', { bias: -2 }))], labels: ['Pull toes up hard', 'Lower slowly'], t1: .8, t2: 1.2, h1: .3, view: V3(75, 6) };
 };
 
 /* ---------- core ---------- */
 function supine(o = {}) { return { root: [0, .11, 0], pel: [-90, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 0, snap: true, ...o }; }
-const floorArms = (z = .1, x = .26) => ikArms([x, .042, z], [.4, 1, 0], 'w', { flat: true, hd: [0, 0, 1] });
+const floorArms = (shZ = -.36, x = .3) => ikArms([x, .042, shZ + .5], [1, .12, 0], 'w', { flat: true, hd: [0, 0, 1] });
 const kneesUp = ikLegs([.12, .08, .52], [.1, 1, .4], [.1, .2, 1]);
 M.crunch = ({ bicycle = false, reverse = false, full = false } = {}) => {
   const hands = ikArms([.1, .2, -.02], [1, .2, .3]);
@@ -1443,11 +1459,13 @@ M.cableCrunch = ({ machine = false } = {}) => {
     const b = { ...base, lum: [24, 0, 0], tho: [26, 0, 0], neck: 10 };
     return { frames: [base, b], props: [() => S(seatBox(), uprightBack(-6)), J => [cap(add(J.shL, [0, .05, .14]), add(J.shR, [0, .05, .14]), .045, 'pad')]], labels: ['Crunch down', 'Return slowly'], t1: 1, t2: 1.5, view: V3(65, 8) };
   }
-  const kneel = { el: 6, az: 3, bend: 92 };
-  const base = { root: [0, .5, 0], pel: [24, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 0, lL: kneel, lR: kneel, anchor: { j: 'knees', at: [0, .05, 0] }, ...ikArms([.09, .18, .1], [1, -.4, .5]) };
-  const b = { ...base, pel: [30, 0, 0], lum: [26, 0, 0], tho: [24, 0, 0], neck: 12 };
-  const an = [0, 2.0, .62];
-  return { frames: [base, b], props: [() => S(...PROP.stack([0, 0, .75], 2.2)), J => PROP.rope(J, an)], labels: ['Crunch elbows to thighs', 'Rise slowly'], t1: 1, t2: 1.5, h1: .4, view: V3(75, 8) };
+  // kneel well back from the stack; hips stay still and the spine curls, elbows travelling toward the knees
+  const kneel = { el: 2, az: 3, bend: 96 };
+  const hands = ikArms([.1, .16, .12], [1, -.5, .4]);
+  const base = { root: [0, .5, 0], pel: [14, 0, 0], lum: [4, 0, 0], tho: [4, 0, 0], neck: 4, lL: kneel, lR: kneel, anchor: { j: 'knees', at: [0, .05, 0] }, ...hands };
+  const b = { ...base, pel: [22, 0, 0], lum: [38, 0, 0], tho: [34, 0, 0], neck: 14 };
+  const an = [0, 2.0, 1.0];
+  return { frames: [base, b], props: [() => S(...PROP.stack([0, 0, 1.15], 2.2)), J => PROP.rope(J, an)], labels: ['Curl your ribs toward your hips', 'Rise slowly, hips still'], t1: 1.1, t2: 1.6, h1: .5, view: V3(80, 6) };
 };
 M.declineSitup = () => {
   const B = lieBench(-18);
@@ -1581,7 +1599,7 @@ M.suspPress = () => {
 
 /* ---------- added movements ---------- */
 M.kneePushup = () => {
-  const knee = [0, .06, 0];
+  const knee = [0, .085, 0];
   const pk = beta => { const b = beta * D2R, u = [0, Math.sin(b), Math.cos(b)]; return { root: madd(knee, u, .5), pel: [90 - beta, 0, 0], lum: [0, 0, 0], tho: [0, 0, 0], neck: 0, ...symLegs({ el: 0, az: 3, bend: 105 }) }; };
   const t0 = pk(30), Jt = J0(t0), hz = Jt.shL[2] + .03;
   const hands = ikArms([.28, .04, hz], [.7, .3, -.7], 'w');
@@ -1624,7 +1642,7 @@ M.sidePlankDip = () => {
    How each movement holds its implement: 'over' (overhand on one bar), 'under' (underhand), 0 neutral (thumbs up / palms facing),
    'sup' / 'pro' (palm up / down for single handles), or a thumb direction in the chest frame. Hands on the floor are laid flat. */
 const GRIPS = {
-  bench: o => o.squeeze ? [0, 1, 0] : 'over', floorPress: () => 'over', machinePress: () => 'over', landminePress: () => 0, svend: () => 0,
+  bench: o => o.squeeze ? [0, 1, 0] : 'over', floorPress: () => 'over', machinePress: () => 'over', landminePress: () => [0, 1, -.8], svend: () => 0,
   fly: () => [0, 1, 0], cableFly: () => 0, pecDeck: () => 0, pullover: () => 'over',
   ohp: o => o.imp === 'machine' ? 'over' : 'over', lateral: () => 0, frontRaise: o => o.imp === 'plate' ? 0 : 'over',
   reverseFly: () => 0, cableRevFly: () => 0, facePull: () => 0, pullApart: () => 'over', uprightRow: () => 'over', extRot: () => 0,
@@ -2660,7 +2678,7 @@ const FW3 = (function () {
     render(time = 0) { this.bodyMat.userData.u.uTime.value = time; this.renderer.render(this.scene, this.camera); }
     project(p, w, h) { const v = new T.Vector3(p[0], p[1], p[2]).project(this.camera); return [(v.x + 1) / 2 * w, (1 - v.y) / 2 * h, v.z]; }
   }
-  return { Stage, bodyGeometry, MUSCLE_INDEX, T };
+  return { Stage, bodyGeometry, MUSCLE_INDEX, T, boneFrames, bindInverses };
 })();
 
 /* ===================== Form guides & common mistakes =====================
